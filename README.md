@@ -1,2 +1,11 @@
 # interna-FPV-drone-racing-league
 Desarrollo de software en la nube - 2024 - 12
+
+### Integrantes
+Andres Felipe Lozada Luna (af.losada@uniandes.edu.co) 
+
+Cristian Pinzon Hernández (cc.pinzonh1@uniandes.edu.co)
+
+Juan Carlos De Jesus (j.dejesus@uniandes.edu.co)
+
+Santiago Alvarez (s.alvarez112@uniandes.edu.co)
