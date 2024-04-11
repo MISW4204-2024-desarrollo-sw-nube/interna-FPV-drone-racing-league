@@ -5,7 +5,7 @@ from flask import request
 from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
 from werkzeug.utils import secure_filename
 
-from base import app, db, Video, VideoSchema, Status
+from base import app, db, Video, Status
 
 @app.route('/api-commands/uploader/upload-video', methods=['POST'])
 def upload_video():
