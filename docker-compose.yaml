@@ -6,7 +6,21 @@ services:
       - ./uploader:/mnt/
     working_dir: /backend/
     command: python api_commands.py
-
+    depends_on:
+      - database
+  database:
+    image: postgres
+    restart: always
+    volumes:
+      - ./postgres-db:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=postgres
+      - PGDATA=/var/lib/postgresql/data/some_name/
   nginx:
     image: nginx:latest
     ports:

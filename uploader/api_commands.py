@@ -5,8 +5,7 @@ from flask import request
 from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
 from werkzeug.utils import secure_filename
 
-from base import app
-
+from base import app, db, Video, VideoSchema, Status
 
 @app.route('/api-commands/uploader/upload-video', methods=['POST'])
 def upload_video():
@@ -31,7 +30,11 @@ def upload_video():
     extension = os.path.splitext(filename)[1]
     filename_with_timestamp = f"{filename_without_ext}_{current_time}{extension}"
 
-    # TODO: We need to use the DB container to store the file url with status 'unprocessed'
+    # TODO: We need to use the DB container to store the file url with status 'inprogress'
+    video = Video(status=Status.inprogress,inprogress_file_url=current_unprocessed_folder,created_on=datetime.datetime.now())
+    db.session.add(video)
+    db.session.commit()
+
     file.save(os.path.join(current_unprocessed_folder, filename_with_timestamp))
 
     # TODO: We need to return here the file id to the user
@@ -58,6 +61,11 @@ def upload_video():
 
     # Save the final video
     # TODO: We need to update the DB register to status 'processed' and update the file url with the processed file
+    video_to_be_updated = Video.query.filter(Video.id == video.id).first()
+    if video_to_be_updated is not None:
+        video_to_be_updated.complete_file_url = current_processed_folder
+        db.session.commit()
+
     processed_video.write_videofile(
         os.path.join(current_processed_folder, 'processed_' + filename_with_timestamp))
 
