@@ -21,19 +21,19 @@ ma = Marshmallow(app)
 api = Api(app)
 
 class Status(enum.Enum):
-    inprogress = 0
-    complete = 1
-    incomplete = -1
+    incomplete = "incomplete"
+    uploaded = "uploaded"
+    processed = "processed"
 
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     status = db.Column(Enum(Status))
-    inprogress_file_url = db.Column(db.String(255))
+    uploaded_file_url = db.Column(db.String(255))
     created_on = db.Column(TIMESTAMP,  
                         default=datetime.datetime.utcnow) 
     updated_at = db.Column(TIMESTAMP,  
                         default=datetime.datetime.utcnow) 
-    complete_file_url = db.Column(db.String(255))
+    processed_file_url = db.Column(db.String(255))
 
 class VideoSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
