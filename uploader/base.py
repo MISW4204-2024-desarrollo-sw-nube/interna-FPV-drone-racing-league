@@ -37,7 +37,7 @@ class Video(db.Model):
 
 class VideoSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
-        fields = ('id', 'status', 'inprogress_file_url', 'complete_file_url')
+        fields = ('id', 'status', 'uploaded_file_url', 'processed_file_url')
 
 
 video_schema = VideoSchema()

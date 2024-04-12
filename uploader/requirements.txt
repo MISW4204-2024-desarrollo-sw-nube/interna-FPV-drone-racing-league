@@ -5,7 +5,6 @@ Flask-RESTful
 Pillow==9.5.0
 pyopenssl
 flask-marshmallow
-Flask-RESTful
 Flask-SQLAlchemy
 SQLAlchemy
 marshmallow-sqlalchemy

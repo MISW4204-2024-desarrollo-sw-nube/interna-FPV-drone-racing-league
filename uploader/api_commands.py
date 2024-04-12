@@ -28,13 +28,13 @@ def upload_video():
     extension = os.path.splitext(filename)[1]
     filename_with_timestamp = f"{filename_without_ext}_{current_time}{extension}"
 
-    
+    file.save(os.path.join(current_unprocessed_folder, filename_with_timestamp))
+
     # TODO: We need to use the DB container to store the file url with status 'uploaded'
     video = Video(status=Status.uploaded,uploaded_file_url=os.path.join(current_unprocessed_folder, filename_with_timestamp),created_on=datetime.datetime.now())
     db.session.add(video)
     db.session.commit()
 
-    file.save(os.path.join(current_unprocessed_folder, filename_with_timestamp))
 
     # TODO: process the video in a separate function, We should use a task queue like Celery for this. this function is blocking and will not scale well
 
@@ -69,7 +69,7 @@ def upload_video():
 
     return jsonify(
         id= video_to_be_updated.id,
-        message='File uploaded and processed successfully'
+        message='File uploaded successfully'
     )
 
 if __name__ == "__main__":
