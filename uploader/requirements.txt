@@ -4,3 +4,8 @@ moviepy
 Flask-RESTful
 Pillow==9.5.0
 pyopenssl
+flask-marshmallow
+Flask-SQLAlchemy
+SQLAlchemy
+marshmallow-sqlalchemy
+psycopg2-binary
