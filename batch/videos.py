@@ -1,38 +1,57 @@
+import datetime
 import os
 from celery import Celery
-from base import app
 from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
-from werkzeug.utils import secure_filename
 
-celery = Celery(__name__, broker='redis://redis-broker:6379/0')
+celery = Celery("videos", broker='redis://broker:6379/0')
+
+from celery.utils.log import get_task_logger
+logger = get_task_logger("videos")
 
 @celery.task(name="procesar_video")
-def procesar_video(file):
-    filename = secure_filename(file.filename)
-
-    # Create directory if not exists
-    os.makedirs(app.config['UNPROCESSED_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['PROCESSED_FOLDER'], exist_ok=True)
-
-    file.save(os.path.join(app.config['UNPROCESSED_FOLDER'], filename))
-
-    # TODO: process the video in a separate function, We should use a task queue like Celery for this. this function is blocking and will not scale well
-
+def procesar_video(
+    unprocessed_file_name,
+    current_unprocessed_folder,
+    current_processed_folder,
+    logo_file_path
+):
     # Process the video
-    clip = VideoFileClip(os.path.join(app.config['UNPROCESSED_FOLDER'], filename))
+    logger.info("Started processig video...")
+    # TODO: We need to update the DB register to status 'processing'
+    unprocessed_video = VideoFileClip(os.path.join(
+        current_unprocessed_folder,
+        unprocessed_file_name)
+    )
 
     # Shorten the video if it's longer than 20 seconds
-    if clip.duration > 20:
-        clip = clip.subclip(0, 20)
+    if unprocessed_video.duration > 20:
+        unprocessed_video = unprocessed_video.subclip(0, 20)
+    logger.info("Cut video")
 
-    # Add images at the beginning and end of the video
-    img_clip = ImageClip(os.path.join(os.getcwd(), 'res', 'maxresdefault.jpg'), duration=1)
-    final_clip = concatenate_videoclips([img_clip, clip, img_clip])
+    # Add the IDRL logo at the beginning and end of the video
+    idrl_logo = ImageClip(logo_file_path, duration=1)
+    processed_video = concatenate_videoclips(
+        [idrl_logo, unprocessed_video, idrl_logo]
+    )
 
     # Change the aspect ratio to 16:9
-    final_clip = final_clip.resize(height=720)  # Resize height to 720p
-    final_clip = final_clip.crop(x_center=final_clip.w / 2, y_center=final_clip.h / 2, width=1280,
-                                 height=720)  # Crop to 16:9
+    processed_video = processed_video.resize(
+        height=720
+    )  # Resize height to 720p
+    logger.info("Resized video")
+    processed_video = processed_video.crop(
+        x_center=processed_video.w / 2,
+        y_center=processed_video.h / 2,
+        width=1280,
+        height=720
+    )  # Crop to 16:9
+    logger.info("Cropped video")
 
     # Save the final video
-    final_clip.write_videofile(os.path.join(app.config['PROCESSED_FOLDER'], 'final_' + filename))
+    processed_file_name = os.path.join(
+        current_processed_folder,
+        'processed_' + unprocessed_file_name
+    )
+    processed_video.write_videofile(processed_file_name)
+    logger.info("Saved video: " + processed_file_name)
+    # TODO: We need to update the DB register to status 'processed' and update the file url with the processed file

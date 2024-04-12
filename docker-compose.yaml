@@ -3,11 +3,15 @@ services:
   celery:
     build:
       context: './batch'
-      dockerfile: Dockerfile
+    volumes:
+      - ./shared:/shared/
+    depends_on:
+      - broker
+      - uploader
     networks:
       network:
 
-  redis-broker:
+  broker:
     image: redis:latest
     ports: 
       - 6379:6379
@@ -18,8 +22,11 @@ services:
     build: ./uploader
     volumes:
       - ./uploader:/mnt/
+      - ./shared:/shared/
     working_dir: /backend/
     command: python api_commands.py
+    networks:
+      network:
 
   nginx:
     image: nginx:latest
@@ -31,5 +38,8 @@ services:
       - ./nginx/localhost.key:/etc/ssl/private/localhost.key
     depends_on:
       - uploader
+    networks:
+      network:
+
 networks:
   network:

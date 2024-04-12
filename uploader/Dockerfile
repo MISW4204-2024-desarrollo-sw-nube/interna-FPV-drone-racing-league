@@ -7,9 +7,6 @@ RUN mkdir /backend
 # Set the working directory in the Docker image to '/backend'
 WORKDIR /backend
 
-# Copy the 'res' directory from the local system to the '/backend/res' directory in the Docker image
-COPY res /backend/res
-
 # Add the 'requirements.txt' file from the local system to the '/backend' directory in the Docker image
 ADD requirements.txt /backend/
 

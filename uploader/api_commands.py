@@ -1,65 +1,66 @@
+import base64
 import datetime
 import os
 
+from celery import Celery
 from flask import request
 from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
 from werkzeug.utils import secure_filename
 
 from base import app
 
+celery_app = Celery("videos", broker='redis://broker:6379/0')
+
+
+@celery_app.task(name="procesar_video")
+def procesar_video(*args):
+    pass
+
 
 @app.route('/api-commands/uploader/upload-video', methods=['POST'])
 def upload_video():
+
+    unprocessed_folder = app.config['UNPROCESSED_FOLDER']
+    processed_folder = app.config['PROCESSED_FOLDER']
+    logo_file = app.config["LOGO_FILE"]
+
     if 'file' not in request.files:
         return 'No file part'
-
+    file = request.files['file']
     # Get the current date  and time as a string
+
     current_date = datetime.datetime.now().strftime('%Y-%m-%d')
     current_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
     # Create the current date folders
-    current_unprocessed_folder = os.path.join(app.config['UNPROCESSED_FOLDER'], current_date)
-    current_processed_folder = os.path.join(app.config['PROCESSED_FOLDER'], current_date)
+    current_unprocessed_folder = os.path.join(unprocessed_folder, current_date)
+    current_processed_folder = os.path.join(processed_folder, current_date)
     os.makedirs(current_unprocessed_folder, exist_ok=True)
     os.makedirs(current_processed_folder, exist_ok=True)
 
-    # Save the file
-    file = request.files['file']
-    # TODO: As we are planning to use auth, we should use the user id as a prefix for the filename
-    filename = secure_filename(file.filename)
+    filename = secure_filename(file.filename) if file.filename else None
+    if not filename:
+        return 'Invalid file'
+
     filename_without_ext = os.path.splitext(filename)[0]
     extension = os.path.splitext(filename)[1]
     filename_with_timestamp = f"{filename_without_ext}_{current_time}{extension}"
 
-    # TODO: We need to use the DB container to store the file url with status 'unprocessed'
+    # Save the file
     file.save(os.path.join(current_unprocessed_folder, filename_with_timestamp))
+    file.close()
 
-    # TODO: We need to return here the file id to the user
+    args = [
+        filename_with_timestamp,
+        current_unprocessed_folder,
+        current_processed_folder,
+        logo_file
+    ]
+    print(args)
 
-    # TODO: process the video in a separate function, We should use a task queue like Celery for this. this function is blocking and will not scale well
-
-    # Process the video
-    # TODO: We need to update the DB register to status 'processing'
-    unprocessed_video = VideoFileClip(
-        os.path.join(current_unprocessed_folder, filename_with_timestamp))
-
-    # Shorten the video if it's longer than 20 seconds
-    if unprocessed_video.duration > 20:
-        unprocessed_video = unprocessed_video.subclip(0, 20)
-
-    # Add the IDRL logo at the beginning and end of the video
-    idrl_logo = ImageClip(app.config["LOGO_FILE"], duration=1)
-    processed_video = concatenate_videoclips([idrl_logo, unprocessed_video, idrl_logo])
-
-    # Change the aspect ratio to 16:9
-    processed_video = processed_video.resize(height=720)  # Resize height to 720p
-    processed_video = processed_video.crop(x_center=processed_video.w / 2, y_center=processed_video.h / 2, width=1280,
-                                 height=720)  # Crop to 16:9
-
-    # Save the final video
-    # TODO: We need to update the DB register to status 'processed' and update the file url with the processed file
-    processed_video.write_videofile(
-        os.path.join(current_processed_folder, 'processed_' + filename_with_timestamp))
+    # Call celery
+    procesar_video.apply_async(args=args, queue='batch_videos')
+    # TODO: We need to use the DB container to store the file url with status 'unprocessed'
 
     return 'File uploaded and processed successfully'
 
