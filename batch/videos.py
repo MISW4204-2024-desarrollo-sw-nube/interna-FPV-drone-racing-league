@@ -1,11 +1,10 @@
-import datetime
 import os
 from celery import Celery
 from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
+from celery.utils.log import get_task_logger
 
 celery = Celery("videos", broker='redis://broker:6379/0')
 
-from celery.utils.log import get_task_logger
 logger = get_task_logger("videos")
 
 @celery.task(name="procesar_video")

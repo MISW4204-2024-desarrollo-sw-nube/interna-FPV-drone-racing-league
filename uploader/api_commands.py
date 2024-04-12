@@ -1,12 +1,8 @@
-import base64
 import datetime
 import os
-
 from celery import Celery
 from flask import request
-from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
 from werkzeug.utils import secure_filename
-
 from base import app
 
 celery_app = Celery("videos", broker='redis://broker:6379/0')
