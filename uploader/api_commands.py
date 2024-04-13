@@ -4,13 +4,13 @@ import os
 from flask import request, jsonify
 from werkzeug.utils import secure_filename
 
-from base import app, db, Video, Status
-from base import celery_app
+from base import app, db, Video, Status, celery_app, video_schema, videos_schema
 
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
     pass
+
 
 @app.route('/api-commands/uploader/upload-video', methods=['POST'])
 def upload_video():
@@ -44,7 +44,7 @@ def upload_video():
     # Save the file
     file.save(os.path.join(current_unprocessed_folder, filename_with_timestamp))
     file.close()
-    
+
     video = Video(
         status=Status.uploaded,
         uploaded_file_url=os.path.join(
@@ -67,11 +67,22 @@ def upload_video():
     # Call celery
     procesar_video.apply_async(args=args, queue='batch_videos')
 
-
     return jsonify(
         id=video.id,
         message='File uploaded successfully'
     )
+
+
+@app.route('/api-queries/uploader/video', methods=['GET'])
+def video():
+    video_id = request.args.get('id')
+    if video_id is not None:
+        video = db.session.query(Video).filter(Video.id == video_id).first()
+        return video_schema.dump(video)
+    else:
+        videos = db.session.query(Video).all()
+        return videos_schema.dump(videos)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", ssl_context='adhoc')
