@@ -1,4 +1,3 @@
-import datetime
 import os
 from celery import Celery
 from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
@@ -65,7 +64,7 @@ def procesar_video(
         db.session.commit()
         logger.info("Saved video in db: " + processed_file_name +
                     " with id: " + str(video_id))
-    except:
+    except Exception:
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.id: video_id, Video.status: Status.incomplete}
         )

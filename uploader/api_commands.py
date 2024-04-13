@@ -3,7 +3,7 @@ import os
 from base import app, db, Video, Status
 from flask import request, jsonify
 from werkzeug.utils import secure_filename
-from base import app, db, Video, Status, celery_app
+from base import celery_app
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
