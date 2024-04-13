@@ -1,9 +1,10 @@
 import datetime
 import os
 from celery import Celery
-from flask import request
+from base import app, db, Video, Status
+from flask import request, jsonify
 from werkzeug.utils import secure_filename
-from base import app
+from base import app, db, Video, Status
 
 celery_app = Celery("videos", broker='redis://broker:6379/0')
 
@@ -56,10 +57,21 @@ def upload_video():
 
     # Call celery
     procesar_video.apply_async(args=args, queue='batch_videos')
-    # TODO: We need to use the DB container to store the file url with status 'unprocessed'
+    video = Video(status=Status.uploaded,uploaded_file_url=os.path.join(current_unprocessed_folder, filename_with_timestamp),created_on=datetime.datetime.now())
+    db.session.add(video)
+    db.session.commit()
 
-    return 'File uploaded and processed successfully'
+    # TODO: We need to update the DB register to status 'processed' and update the file url with the processed file
+    video_to_be_updated = Video.query.filter(Video.id == video.id).first()
+    if video_to_be_updated is not None:
+        video_to_be_updated.processed_file_url = os.path.join(current_processed_folder, 'processed_' + filename_with_timestamp)
+        video_to_be_updated.status = Status.processed
+        db.session.commit()
 
+    return jsonify(
+        id= video_to_be_updated.id,
+        message='File uploaded successfully'
+    )
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", ssl_context='adhoc')
