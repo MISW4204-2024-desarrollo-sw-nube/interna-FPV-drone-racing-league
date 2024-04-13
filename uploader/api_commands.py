@@ -2,6 +2,7 @@ import datetime
 import os
 
 from flask import request, jsonify
+from sqlalchemy import asc, desc
 from werkzeug.utils import secure_filename
 
 from base import app, db, Video, Status, celery_app, video_schema, videos_schema
@@ -12,7 +13,7 @@ def procesar_video(*args):
     pass
 
 
-@app.route('/api-commands/uploader/upload-video', methods=['POST'])
+@app.route('/api/tasks', methods=['POST'])
 def upload_video():
 
     unprocessed_folder = app.config['UNPROCESSED_FOLDER']
@@ -73,15 +74,25 @@ def upload_video():
     )
 
 
-@app.route('/api-queries/uploader/video', methods=['GET'])
-def video():
-    video_id = request.args.get('id')
-    if video_id is not None:
-        video = db.session.query(Video).filter(Video.id == video_id).first()
+@app.route('/api/tasks/<id>', methods=['GET'])
+def get_video(id):
+    if id is not None:
+        video = db.session.query(Video).filter(Video.id == id).first()
+        if video is None:
+            return "", 404
         return video_schema.dump(video)
     else:
-        videos = db.session.query(Video).all()
-        return videos_schema.dump(videos)
+        return "", 404
+    
+@app.route('/api/tasks', methods=['GET'])
+def get_video_list():
+    max = int(request.args.get('max', 10))
+    order = int(request.args.get('order', 0))
+
+    descending_query = db.session.query(Video).order_by(desc(Video.id)).limit(max)
+    videos = descending_query if order == 1 else db.session.query(Video).order_by(asc(Video.id)).limit(max)
+
+    return videos_schema.dump(videos.all())
 
 
 if __name__ == "__main__":
