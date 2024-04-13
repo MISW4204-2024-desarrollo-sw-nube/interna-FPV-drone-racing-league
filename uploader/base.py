@@ -1,3 +1,4 @@
+from celery import Celery
 from flask import Flask
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
@@ -26,9 +27,12 @@ app.config["LOGO_FILE"] = os.path.join(
 )
 app_context = app.app_context()
 app_context.push()
+
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 api = Api(app)
+
+celery_app = Celery("videos", broker='redis://broker:6379/0')
 
 class Status(enum.Enum):
     incomplete = "incomplete"
@@ -51,4 +55,3 @@ class VideoSchema(ma.SQLAlchemyAutoSchema):
 
 
 video_schema = VideoSchema()
-

@@ -1,18 +1,13 @@
 import datetime
 import os
-from celery import Celery
 from base import app, db, Video, Status
 from flask import request, jsonify
 from werkzeug.utils import secure_filename
-from base import app, db, Video, Status
-
-celery_app = Celery("videos", broker='redis://broker:6379/0')
-
+from base import app, db, Video, Status, celery_app
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
     pass
-
 
 @app.route('/api-commands/uploader/upload-video', methods=['POST'])
 def upload_video():
@@ -46,30 +41,39 @@ def upload_video():
     # Save the file
     file.save(os.path.join(current_unprocessed_folder, filename_with_timestamp))
     file.close()
+    
+    video = Video(
+        status=Status.uploaded,
+        uploaded_file_url=os.path.join(
+            current_unprocessed_folder,
+            filename_with_timestamp
+        ),
+        created_on=datetime.datetime.now()
+    )
+    db.session.add(video)
+    db.session.commit()
 
     args = [
         filename_with_timestamp,
         current_unprocessed_folder,
         current_processed_folder,
-        logo_file
+        logo_file,
+        video.id
     ]
-    print(args)
 
     # Call celery
     procesar_video.apply_async(args=args, queue='batch_videos')
-    video = Video(status=Status.uploaded,uploaded_file_url=os.path.join(current_unprocessed_folder, filename_with_timestamp),created_on=datetime.datetime.now())
-    db.session.add(video)
-    db.session.commit()
 
     # TODO: We need to update the DB register to status 'processed' and update the file url with the processed file
     video_to_be_updated = Video.query.filter(Video.id == video.id).first()
     if video_to_be_updated is not None:
-        video_to_be_updated.processed_file_url = os.path.join(current_processed_folder, 'processed_' + filename_with_timestamp)
+        video_to_be_updated.processed_file_url = os.path.join(
+            current_processed_folder, 'processed_' + filename_with_timestamp)
         video_to_be_updated.status = Status.processed
         db.session.commit()
 
     return jsonify(
-        id= video_to_be_updated.id,
+        id=video_to_be_updated.id,
         message='File uploaded successfully'
     )
 

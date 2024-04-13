@@ -1,7 +1,0 @@
-flask
-flask_restful
-werkzeug
-moviepy
-Pillow==9.5.0
-celery
-celery[redis]

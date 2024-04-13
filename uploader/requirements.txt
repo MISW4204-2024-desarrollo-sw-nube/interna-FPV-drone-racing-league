@@ -4,10 +4,11 @@ moviepy
 Flask-RESTful
 Pillow==9.5.0
 pyopenssl
-celery
-celery[redis]
 flask-marshmallow
 Flask-SQLAlchemy
 SQLAlchemy
 marshmallow-sqlalchemy
 psycopg2-binary
+
+celery
+celery[redis]
