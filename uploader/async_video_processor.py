@@ -1,11 +1,13 @@
 import os
+
 from celery import Celery
-from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
 from celery.utils.log import get_task_logger
+from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
+
 from base import Status, Video, db
 
-celery = Celery("videos", broker='redis://broker:6379/0')
-logger = get_task_logger("videos")
+celery = Celery("async_video_processor", broker='redis://broker:6379/0')
+logger = get_task_logger("async_video_processor")
 
 
 @celery.task(name="procesar_video")
@@ -18,7 +20,7 @@ def procesar_video(
 ):
     try:
         # Process the video
-        logger.info("Started processig video...")
+        logger.info("Started processing video...")
         unprocessed_video = VideoFileClip(os.path.join(
             current_unprocessed_folder,
             unprocessed_file_name)
@@ -55,14 +57,13 @@ def procesar_video(
             'processed_' + unprocessed_file_name
         )
         processed_video.write_videofile(processed_file_name)
-        logger.info("Processed video: " + processed_file_name)
+        logger.info(f"Processed video: {processed_file_name}")
 
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.id: video_id, Video.status: Status.processed}
         )
         db.session.commit()
-        logger.info("Saved video in db: " + processed_file_name +
-                    " with id: " + str(video_id))
+        logger.info(f"Saved video in db: {processed_file_name} with id: {video_id}")
     except Exception:
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.id: video_id, Video.status: Status.incomplete}

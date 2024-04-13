@@ -1,12 +1,13 @@
-from celery import Celery
-from flask import Flask
-from flask_restful import Api
-from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
-from sqlalchemy import TIMESTAMP, Enum
+import datetime
 import enum
 import os
-import datetime 
+
+from celery import Celery
+from flask import Flask
+from flask_marshmallow import Marshmallow
+from flask_restful import Api
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import TIMESTAMP, Enum
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] =  'postgresql+psycopg2://postgres:1234@database:5432/postgres'
@@ -32,7 +33,7 @@ db = SQLAlchemy(app)
 ma = Marshmallow(app)
 api = Api(app)
 
-celery_app = Celery("videos", broker='redis://broker:6379/0')
+celery_app = Celery("async_video_processor", broker='redis://broker:6379/0')
 
 class Status(enum.Enum):
     incomplete = "incomplete"

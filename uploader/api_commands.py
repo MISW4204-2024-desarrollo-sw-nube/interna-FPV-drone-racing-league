@@ -1,9 +1,12 @@
 import datetime
 import os
-from base import app, db, Video, Status
+
 from flask import request, jsonify
 from werkzeug.utils import secure_filename
+
+from base import app, db, Video, Status
 from base import celery_app
+
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
@@ -64,15 +67,9 @@ def upload_video():
     # Call celery
     procesar_video.apply_async(args=args, queue='batch_videos')
 
-    video_to_be_updated = Video.query.filter(Video.id == video.id).first()
-    if video_to_be_updated is not None:
-        video_to_be_updated.processed_file_url = os.path.join(
-            current_processed_folder, 'processed_' + filename_with_timestamp)
-        video_to_be_updated.status = Status.processed
-        db.session.commit()
 
     return jsonify(
-        id=video_to_be_updated.id,
+        id=video.id,
         message='File uploaded successfully'
     )
 
