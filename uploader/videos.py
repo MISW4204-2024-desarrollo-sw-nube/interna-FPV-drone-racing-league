@@ -19,7 +19,6 @@ def procesar_video(
     try:
         # Process the video
         logger.info("Started processig video...")
-        # TODO: We need to update the DB register to status 'processing'
         unprocessed_video = VideoFileClip(os.path.join(
             current_unprocessed_folder,
             unprocessed_file_name)
