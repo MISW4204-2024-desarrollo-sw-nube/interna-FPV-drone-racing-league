@@ -64,7 +64,6 @@ def upload_video():
     # Call celery
     procesar_video.apply_async(args=args, queue='batch_videos')
 
-    # TODO: We need to update the DB register to status 'processed' and update the file url with the processed file
     video_to_be_updated = Video.query.filter(Video.id == video.id).first()
     if video_to_be_updated is not None:
         video_to_be_updated.processed_file_url = os.path.join(
