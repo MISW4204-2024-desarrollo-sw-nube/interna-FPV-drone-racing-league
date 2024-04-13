@@ -1,13 +1,35 @@
 version: "3.2"
 services:
+  celery:
+    build:
+      context: ./
+      dockerfile: ./batch/Dockerfile
+    volumes:
+      - ./shared:/shared/
+    depends_on:
+      - broker
+      - uploader
+    networks:
+      network:
+
+  broker:
+    image: redis:latest
+    ports: 
+      - 6379:6379
+    networks:
+      network:
+            
   uploader:
     build: ./uploader
     volumes:
       - ./uploader:/mnt/
+      - ./shared:/shared/
     working_dir: /backend/
     command: python api_commands.py
     depends_on:
-      - database
+      - database    
+    networks:
+      network:
   database:
     image: postgres
     restart: always
@@ -21,6 +43,8 @@ services:
       - POSTGRES_PASSWORD=1234
       - POSTGRES_DB=postgres
       - PGDATA=/var/lib/postgresql/data/ifpvdl/
+    networks:
+      network:
   nginx:
     image: nginx:latest
     ports:
@@ -31,3 +55,8 @@ services:
       - ./nginx/localhost.key:/etc/ssl/private/localhost.key
     depends_on:
       - uploader
+    networks:
+      network:
+
+networks:
+  network:

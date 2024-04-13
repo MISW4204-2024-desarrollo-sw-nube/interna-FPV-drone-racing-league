@@ -9,3 +9,6 @@ Flask-SQLAlchemy
 SQLAlchemy
 marshmallow-sqlalchemy
 psycopg2-binary
+
+celery
+celery[redis]
