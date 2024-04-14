@@ -92,12 +92,13 @@ def get_video_list():
     order_value = int(request.args.get('order', 0))
 
     order_func = desc if order_value == 1 else asc
-    videos = db.session.query(Video).order_by(order_func(Video.id)).limit(max_value)
+    videos = db.session.query(Video).filter(Video.status != Status.deleted).order_by(order_func(Video.id)).limit(max_value)
 
     return videos_schema.dump(videos.all())
 
 
 @app.route('/api/tasks/<id>', methods=['DELETE'])
+@jwt_required()
 def delete_video(id):
     video = db.session.query(Video).filter(Video.id == id).first()
     if video is None:
@@ -106,14 +107,23 @@ def delete_video(id):
     if video.status == Status.deleted:
         return jsonify(error=f"Video with id:{id} is already deleted"), 400
 
-    # delete the file
+    # delete the unprocessed and processed files
     try:
         os.remove(video.uploaded_file_url)
+        video.uploaded_file_url = None
+    except Exception:
+        return jsonify(error=f"Error deleting the uploaded video file with id:{id}"), 500
+
+    try:
         os.remove(video.processed_file_url)
+        video.processed_file_url = None
+    except Exception:
+        return jsonify(error=f"Error deleting the processed video file with id:{id}"), 500
+
+    # Update status of the video record
+    try:
         video.updated_at = datetime.datetime.now()
         video.status = Status.deleted
-        video.processed_file_url = None
-        video.uploaded_file_url = None
         db.session.commit()
         return "", 204
     except Exception:
