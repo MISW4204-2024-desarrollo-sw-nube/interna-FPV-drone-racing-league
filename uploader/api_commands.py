@@ -10,6 +10,7 @@ from flask_jwt_extended import jwt_required
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
+
     pass
 
 @app.route('/api/tasks', methods=['POST'])
@@ -76,24 +77,58 @@ def upload_video():
 @app.route('/api/tasks/<id>', methods=['GET'])
 @jwt_required()
 def get_video(id):
-    if id is not None:
-        video = db.session.query(Video).filter(Video.id == id).first()
-        if video is None:
-            return "", 404
-        return video_schema.dump(video)
-    else:
+    if id is None:
+        return jsonify(error="No id provided"), 400
+    video = db.session.query(Video).filter(Video.id == id).first()
+    if video is None:
         return "", 404
-    
+    return video_schema.dump(video)
+
+
 @app.route('/api/tasks', methods=['GET'])
 @jwt_required()
 def get_video_list():
-    max = int(request.args.get('max', 10))
-    order = int(request.args.get('order', 0))
+    max_value = int(request.args.get('max', 10))
+    order_value = int(request.args.get('order', 0))
 
-    descending_query = db.session.query(Video).order_by(desc(Video.id)).limit(max)
-    videos = descending_query if order == 1 else db.session.query(Video).order_by(asc(Video.id)).limit(max)
+    order_func = desc if order_value == 1 else asc
+    videos = db.session.query(Video).filter(Video.status != Status.deleted).order_by(order_func(Video.id)).limit(max_value)
 
     return videos_schema.dump(videos.all())
+
+
+@app.route('/api/tasks/<id>', methods=['DELETE'])
+@jwt_required()
+def delete_video(id):
+    video = db.session.query(Video).filter(Video.id == id).first()
+    if video is None:
+        return "", 404
+
+    if video.status == Status.deleted:
+        return jsonify(error=f"Video with id:{id} is already deleted"), 400
+
+    # delete the unprocessed and processed files
+    try:
+        os.remove(video.uploaded_file_url)
+        video.uploaded_file_url = None
+    except Exception:
+        return jsonify(error=f"Error deleting the uploaded video file with id:{id}"), 500
+
+    try:
+        os.remove(video.processed_file_url)
+        video.processed_file_url = None
+    except Exception:
+        return jsonify(error=f"Error deleting the processed video file with id:{id}"), 500
+
+    # Update status of the video record
+    try:
+        video.updated_at = datetime.datetime.now()
+        video.status = Status.deleted
+        db.session.commit()
+        return "", 204
+    except Exception:
+        return jsonify(error=f"Error deleting the video with id:{id}"), 500
+
 
 
 if __name__ == "__main__":
