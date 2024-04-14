@@ -1,3 +1,4 @@
+import datetime
 import os
 
 from celery import Celery
@@ -60,12 +61,13 @@ def procesar_video(
         logger.info(f"Processed video: {processed_file_name}")
 
         db.session.query(Video).filter(Video.id == video_id).update(
-            {Video.id: video_id, Video.status: Status.processed}
+            {Video.updated_at: datetime.datetime.now(), Video.status: Status.processed,
+             Video.processed_file_url: processed_file_name}
         )
         db.session.commit()
         logger.info(f"Saved video in db: {processed_file_name} with id: {video_id}")
     except Exception:
         db.session.query(Video).filter(Video.id == video_id).update(
-            {Video.id: video_id, Video.status: Status.incomplete}
+            {Video.status: Status.incomplete, Video.processed_file_url: None}
         )
         db.session.commit()

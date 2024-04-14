@@ -46,6 +46,7 @@ class Status(enum.Enum):
     incomplete = "incomplete"
     uploaded = "uploaded"
     processed = "processed"
+    deleted = "deleted"
 
 
 class Video(db.Model):
@@ -69,5 +70,3 @@ class VideoSchema(ma.SQLAlchemyAutoSchema):
 video_schema = VideoSchema()
 videos_schema = VideoSchema(many=True)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", ssl_context='adhoc')
