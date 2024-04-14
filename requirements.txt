@@ -1,0 +1,10 @@
+Flask
+flask-marshmallow
+Flask-RESTful
+Flask-SQLAlchemy
+SQLAlchemy
+marshmallow-sqlalchemy
+requests
+pylint
+pyopenssl
+flask-jwt-extended

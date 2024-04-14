@@ -1,0 +1,15 @@
+flask
+werkzeug
+moviepy
+Flask-RESTful
+Pillow==9.5.0
+pyopenssl
+flask-marshmallow
+Flask-SQLAlchemy
+SQLAlchemy
+marshmallow-sqlalchemy
+marshmallow_enum
+psycopg2-binary
+flask-jwt-extended
+celery
+celery[redis]
