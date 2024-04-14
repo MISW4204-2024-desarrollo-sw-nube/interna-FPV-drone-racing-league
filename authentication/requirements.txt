@@ -8,8 +8,5 @@ flask-marshmallow
 Flask-SQLAlchemy
 SQLAlchemy
 marshmallow-sqlalchemy
-marshmallow_enum
 psycopg2-binary
 flask-jwt-extended
-celery
-celery[redis]

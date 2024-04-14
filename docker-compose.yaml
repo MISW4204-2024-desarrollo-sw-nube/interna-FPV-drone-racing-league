@@ -14,11 +14,11 @@ services:
 
   broker:
     image: redis:latest
-    ports: 
+    ports:
       - 6379:6379
     networks:
       network:
-            
+
   uploader:
     build: ./uploader
     volumes:
@@ -27,7 +27,17 @@ services:
     working_dir: /backend/
     command: python api_commands.py
     depends_on:
-      - database    
+      - database
+    networks:
+      network:
+  authentication:
+    build: ./authentication
+    volumes:
+      - ./authentication:/mnt/
+    working_dir: /backend/
+    command: python api_commands.py
+    depends_on:
+      - database
     networks:
       network:
   database:
@@ -55,6 +65,7 @@ services:
       - ./nginx/localhost.key:/etc/ssl/private/localhost.key
     depends_on:
       - uploader
+      - authentication
     networks:
       network:
 
