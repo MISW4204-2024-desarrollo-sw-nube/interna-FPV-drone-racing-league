@@ -15,7 +15,6 @@ def procesar_video(*args):
 @app.route('/api/tasks', methods=['POST'])
 @jwt_required()
 def upload_video():
-    
     unprocessed_folder = app.config['UNPROCESSED_FOLDER']
     processed_folder = app.config['PROCESSED_FOLDER']
     logo_file = app.config["LOGO_FILE"]
