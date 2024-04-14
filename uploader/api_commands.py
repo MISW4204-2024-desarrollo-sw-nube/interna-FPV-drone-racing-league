@@ -6,16 +6,16 @@ from sqlalchemy import asc, desc
 from werkzeug.utils import secure_filename
 
 from base import app, db, Video, Status, celery_app, video_schema, videos_schema
-
+from flask_jwt_extended import jwt_required
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
     pass
 
-
 @app.route('/api/tasks', methods=['POST'])
+@jwt_required()
 def upload_video():
-
+    
     unprocessed_folder = app.config['UNPROCESSED_FOLDER']
     processed_folder = app.config['PROCESSED_FOLDER']
     logo_file = app.config["LOGO_FILE"]
@@ -75,6 +75,7 @@ def upload_video():
 
 
 @app.route('/api/tasks/<id>', methods=['GET'])
+@jwt_required()
 def get_video(id):
     if id is not None:
         video = db.session.query(Video).filter(Video.id == id).first()
@@ -85,6 +86,7 @@ def get_video(id):
         return "", 404
     
 @app.route('/api/tasks', methods=['GET'])
+@jwt_required()
 def get_video_list():
     max = int(request.args.get('max', 10))
     order = int(request.args.get('order', 0))
