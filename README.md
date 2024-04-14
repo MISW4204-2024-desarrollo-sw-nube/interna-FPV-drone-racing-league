@@ -14,6 +14,10 @@ Desarrollo de software en la nube - 2024 - 12
    4.3 Debe ejecutar nuevamente docker compose up --build
 
 
+# Documentos de arquitectura y diseños
+1. Podrá encontrar los diseños de arquitectura para este release en la carpeta llamada "documentos" en un documento llamado "E1-arquitectura de la aplicacion"
+
+
 ### Integrantes
 Andres Felipe Lozada Luna (af.losada@uniandes.edu.co) 
 
