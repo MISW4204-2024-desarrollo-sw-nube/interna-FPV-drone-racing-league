@@ -5,7 +5,7 @@ from flask_jwt_extended import create_access_token
 @app.route('/api/users/signup', methods=['POST'])
 def signup_user():
    if "useremail" not in request.json or "username" not in request.json or "userpassword" not in request.json:
-        return "Email, username of password are invalid. Please try again.", 400
+        return "Email, username or password are invalid. Please try again.", 400
 
    user = Usuario(useremail=request.json["useremail"], username=request.json["username"], userpassword=request.json["userpassword"])
    db.session.add(user)
