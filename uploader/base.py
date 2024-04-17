@@ -11,6 +11,7 @@ from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import TIMESTAMP, Enum
 from flask_jwt_extended import JWTManager
+from prometheus_flask_exporter import PrometheusMetrics
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:1234@database:5432/postgres'
@@ -38,9 +39,16 @@ app_context.push()
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 api = Api(app)
+metrics = PrometheusMetrics(app)
 jwt = JWTManager(app)
 
-celery_app = Celery("async_video_processor", broker='redis://broker:6379/0')
+celery_app = Celery(
+    "async_video_processor",
+    broker='redis://broker:6379/0',
+    worker_send_task_events=True,
+    task_send_sent_event=True
+)
+
 
 class Status(enum.Enum):
     incomplete = "incomplete"
@@ -69,4 +77,3 @@ class VideoSchema(ma.SQLAlchemyAutoSchema):
 
 video_schema = VideoSchema()
 videos_schema = VideoSchema(many=True)
-

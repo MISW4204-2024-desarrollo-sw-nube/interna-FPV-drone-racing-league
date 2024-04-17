@@ -12,6 +12,18 @@ services:
     networks:
       network:
 
+  celery-exporter:
+    image: danihodovic/celery-exporter
+    environment:
+      CE_BROKER_URL: redis://broker:6379/1
+    ports:
+      - "9808:9808"
+    depends_on:
+      - celery
+      - broker
+    networks:
+      network:
+
   broker:
     image: redis:latest
     ports:
@@ -30,6 +42,7 @@ services:
       - database
     networks:
       network:
+  
   authentication:
     build: ./authentication
     volumes:
@@ -40,6 +53,7 @@ services:
       - database
     networks:
       network:
+
   database:
     image: postgres
     restart: always
@@ -55,6 +69,19 @@ services:
       - PGDATA=/var/lib/postgresql/data/ifpvdl/
     networks:
       network:
+  
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    ports:
+      - 9187:9187
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:1234@database:5432/postgres?sslmode=disable"
+    links:
+      - database
+      - prometheus
+    networks:
+      network:
+
   nginx:
     image: nginx:latest
     ports:
@@ -69,5 +96,33 @@ services:
     networks:
       network:
 
+  prometheus:
+    image: prom/prometheus:v2.21.0
+    ports:
+      - 9000:9090
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus.yml
+    networks:
+      network:
+
+  grafana:
+    image: grafana/grafana:7.5.7
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - grafana-data:/var/lib/grafana
+    networks:
+      network:
+
+
 networks:
   network:
+
+  
+volumes:
+  prometheus-data:
+  grafana-data:
