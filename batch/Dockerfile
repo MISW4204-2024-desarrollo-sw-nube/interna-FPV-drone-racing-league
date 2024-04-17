@@ -10,6 +10,7 @@ COPY ./batch/celery.sh .
 COPY ./uploader/async_video_processor.py .
 COPY ./uploader/requirements.txt .
 COPY ./uploader/base.py .
+COPY ./uploader/celeryconfig.py .
 
 # Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt

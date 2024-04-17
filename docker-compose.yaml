@@ -8,7 +8,6 @@ services:
       - ./shared:/shared/
     depends_on:
       - broker
-      - uploader
     networks:
       network:
 

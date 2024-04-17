@@ -2,6 +2,7 @@
 import datetime
 import enum
 import os
+import celeryconfig
 
 from celery import Celery
 from flask import Flask
@@ -44,11 +45,9 @@ jwt = JWTManager(app)
 
 celery_app = Celery(
     "async_video_processor",
-    broker='redis://broker:6379/0',
-    worker_send_task_events=True,
-    task_send_sent_event=True
+    broker='redis://broker:6379/0'
 )
-
+celery_app.config_from_object(celeryconfig)
 
 class Status(enum.Enum):
     incomplete = "incomplete"

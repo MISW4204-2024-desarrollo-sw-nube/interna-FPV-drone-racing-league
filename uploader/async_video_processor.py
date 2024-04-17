@@ -1,5 +1,6 @@
 import datetime
 import os
+import celeryconfig
 
 from celery import Celery
 from celery.utils.log import get_task_logger
@@ -10,9 +11,8 @@ from base import Status, Video, db
 celery = Celery(
     "async_video_processor",
     broker='redis://broker:6379/0',
-    worker_send_task_events=True,
-    task_send_sent_event=True
 )
+celery.config_from_object(celeryconfig)
 logger = get_task_logger("async_video_processor")
 
 
