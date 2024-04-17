@@ -10,7 +10,6 @@ from base import Status, Video, db
 
 celery = Celery(
     "async_video_processor",
-    broker='redis://broker:6379/0',
 )
 celery.config_from_object(celeryconfig)
 logger = get_task_logger("async_video_processor")
