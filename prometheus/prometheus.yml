@@ -11,7 +11,6 @@ scrape_configs:
     
       - targets:
           - 'prometheus:9090'
-          - 'postgres-exporter:9187'
           - 'celery-exporter:9808'
   - job_name: flask-services
     scheme: https
