@@ -1,6 +1,5 @@
 steps:
-  - options:
-      logging: NONE
-  # running docker-compose
-    name: 'docker/compose:2.26.1'
+  - name: 'docker/compose:2.26.1'
     args: ['up', '-d']
+    options:
+      logging: NONE
