@@ -8,7 +8,6 @@ rule_files:
 scrape_configs:
   - job_name: other-services
     static_configs:
-    
       - targets:
           - 'prometheus:9090'
           - 'celery-exporter:9808'

@@ -17,9 +17,6 @@ services:
       CE_BROKER_URL: redis://broker:6379/0
     ports:
       - "9808:9808"
-    depends_on:
-      - celery
-      - broker
     networks:
       network:
 
