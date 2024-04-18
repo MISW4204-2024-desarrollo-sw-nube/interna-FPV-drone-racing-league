@@ -3,6 +3,7 @@ package computerdatabase
 import io.gatling.javaapi.core.CoreDsl.*
 import io.gatling.javaapi.core.Simulation
 import io.gatling.javaapi.http.HttpDsl.http
+import scala.util.Random
 import java.lang.invoke.MethodHandles
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -28,60 +29,72 @@ class Escenario1Simulation : Simulation() {
     return files.toList()
   }
 
-  val videos = listOf( "videos/small_20s.mp4")//iterateResources("videos")
+  val videos = listOf("videos/small_20s.mp4")//iterateResources("videos")
 
   val feeder = listFeeder(videos.map {
-    mapOf(it to it)
+    mapOf("video" to it)
   }).random()
 
   var token: String = ""
 
+  val password = Random().alphanumeric().take(10).mkString()
+
+  val userString = """
+          {
+            "useremail":"${Random().alphanumeric().take(10).mkString()}@foo.com",
+            "username": "${Random().alphanumeric().take(10).mkString()}",
+            "password1":"$password",
+            "password2":"$password"
+          }
+        """.trimIndent()
+
   val getToken = exec(
     http("Create User")
       .post("/api/users/signup")
+      .body(
+        StringBody(
+          userString
+        )
+      ).check(
+        jsonPath("$..*").find().saveAs("body")
+      ),
+    http("Login User")
+      .post("/api/users/login")
+      .body(StringBody {
+        val body = it.get<String>("body")?.replace("userpassword", "password")
+        println(body)
+        body
+      })
       .check(
-        jsonPath("")
+        jsonPath("$.token")
           .find()
-          .saveAs("signup")
+          .saveAs("token")
       )
   )
-    .exec(
-      http("Login User")
-        .post("/api/users/login")
-        .body(StringBody {
-          it.get<String>("signup")
-        })
-        .check(
-          jsonPath("$.token")
-            .find()
-            .saveAs("token")
-        )
-    ).exitHereIfFailed().exec { it ->
+    .exitHereIfFailed().exec { it ->
       token = it.get<String>("token")!!
       it
     }
 
-  val search = exec {
-    it.set("token", token)
-  }.feed(feeder)
-    .exec { session ->
-      http("Process Video")
-        .post("/api/tasks")
-        .header("Authorization") {
-          "Bearer ${session.get<String>("token")}"
-        }
-      session
-    }
+  val process = exec(
+    http("Process Video")
+    .post("/api/tasks")
+      .body(RawFileBody("#{video}"))
+    .header("Authorization") {
+      "Bearer $token"
+    })
 
   val httpProtocol =
     http.baseUrl("https://127.0.0.1:5000")
-      .shareConnections()
+      .contentTypeHeader("application/json")
 
-  val processVideo = scenario("Users").exec(getToken, search)
+  val signupLogin = scenario("Token").exec(getToken)
+  val processVideo = scenario("Users").feed(feeder).exec(process)
 
   init {
     setUp(
-      processVideo.injectOpen(rampUsers(10).during(60))
+      signupLogin.injectOpen(atOnceUsers(1)),
+      processVideo.injectOpen(nothingFor(5), rampUsers(10).during(10))
     ).protocols(httpProtocol)
   }
 }

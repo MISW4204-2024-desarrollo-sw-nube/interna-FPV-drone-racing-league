@@ -4,6 +4,10 @@ plugins {
 
     // The following line allows to load io.gatling.gradle plugin and directly apply it
     id("io.gatling.gradle") version "3.10.5.1"
+    kotlin("plugin.serialization") version "1.9.22"
+}
+apply {
+    plugin("kotlinx-serialization")
 }
 
 gatling {
@@ -15,6 +19,10 @@ gatling {
         // Enterprise Cloud (https://cloud.gatling.io/) configuration reference: https://gatling.io/docs/gatling/reference/current/extensions/gradle_plugin/#working-with-gatling-enterprise-cloud
         // Enterprise Self-Hosted configuration reference: https://gatling.io/docs/gatling/reference/current/extensions/gradle_plugin/#working-with-gatling-enterprise-self-hosted
     }
+}
+
+dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 }
 
 repositories {
