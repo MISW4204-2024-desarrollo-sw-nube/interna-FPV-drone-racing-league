@@ -10,3 +10,4 @@ SQLAlchemy
 marshmallow-sqlalchemy
 psycopg2-binary
 flask-jwt-extended
+prometheus_flask_exporter

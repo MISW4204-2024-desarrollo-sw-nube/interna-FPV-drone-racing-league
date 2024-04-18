@@ -1,5 +1,6 @@
 import datetime
 import os
+import celeryconfig
 
 from celery import Celery
 from celery.utils.log import get_task_logger
@@ -7,7 +8,10 @@ from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
 
 from base import Status, Video, db
 
-celery = Celery("async_video_processor", broker='redis://broker:6379/0')
+celery = Celery(
+    "async_video_processor",
+)
+celery.config_from_object(celeryconfig)
 logger = get_task_logger("async_video_processor")
 
 
@@ -65,7 +69,8 @@ def procesar_video(
              Video.processed_file_url: processed_file_name}
         )
         db.session.commit()
-        logger.info(f"Saved video in db: {processed_file_name} with id: {video_id}")
+        logger.info(
+            f"Saved video in db: {processed_file_name} with id: {video_id}")
     except Exception:
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.status: Status.incomplete, Video.processed_file_url: None}
