@@ -48,12 +48,17 @@ celery_app = Celery(
 )
 celery_app.config_from_object(celeryconfig)
 
+class Usuario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    useremail = db.Column(db.String(255))
+    username = db.Column(db.String(255))
+    userpassword = db.Column(db.String(255))
+
 class Status(enum.Enum):
     incomplete = "incomplete"
     uploaded = "uploaded"
     processed = "processed"
     deleted = "deleted"
-
 
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -64,7 +69,11 @@ class Video(db.Model):
     updated_at = db.Column(TIMESTAMP,
                            default=datetime.datetime.utcnow)
     processed_file_url = db.Column(db.String(255))
+    owner_id = db.Column(db.Integer, db.ForeignKey("usuario.id"))
 
+class UsuarioSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        fields = ('id', 'useremail', 'username', 'userpassword')
 
 class VideoSchema(ma.SQLAlchemyAutoSchema):
     status = EnumField(Status, by_value=True)
@@ -72,6 +81,6 @@ class VideoSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Video
 
-
+usuario_schema = UsuarioSchema()
 video_schema = VideoSchema()
 videos_schema = VideoSchema(many=True)
