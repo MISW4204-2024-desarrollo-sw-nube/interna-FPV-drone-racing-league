@@ -14,8 +14,15 @@ from sqlalchemy import TIMESTAMP, Enum
 from flask_jwt_extended import JWTManager
 from prometheus_flask_exporter import PrometheusMetrics
 
+database = os.environ['POSTGRES_DB']
+user = os.environ['POSTGRES_USER']
+password = os.environ['POSTGRES_PASSWORD']
+host = os.environ['POSTGRES_HOST']
+port = os.environ['POSTGRES_PORT']
+database_url = f'{host}://{user}:{password}@database:{port}/{database}'
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:1234@database:5432/postgres'
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config["SECRET_KEY"] = 'your-secret-key'
 app.config["JWT_SECRET_KEY"] = "1234"  # Change this!
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
