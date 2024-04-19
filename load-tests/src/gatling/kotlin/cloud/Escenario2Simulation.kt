@@ -1,13 +1,15 @@
-package computerdatabase
+package cloud
 
+import io.gatling.http.client.body.form.FormUrlEncodedRequestBody
 import io.gatling.javaapi.core.CoreDsl.*
 import io.gatling.javaapi.core.Simulation
-import io.gatling.javaapi.http.HttpDsl.http
+import io.gatling.javaapi.http.HttpDsl.*
 import scala.util.Random
 import java.lang.invoke.MethodHandles
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import kotlin.io.path.extension
+import scala.util.Properties.*
 
 /**
  * This sample is based on our official tutorials:
@@ -15,7 +17,8 @@ import kotlin.io.path.extension
  * - [Gatling quickstart tutorial](https://gatling.io/docs/gatling/tutorials/quickstart)
  * - [Gatling advanced tutorial](https://gatling.io/docs/gatling/tutorials/advanced)
  */
-class Escenario1Simulation : Simulation() {
+class Escenario2Simulation : Simulation() {
+
 
   fun iterateResources(resourceDir: String): List<String> {
     val resource = MethodHandles.lookup().lookupClass().classLoader.getResource(resourceDir)
@@ -76,25 +79,39 @@ class Escenario1Simulation : Simulation() {
       it
     }
 
-  val process = exec(
+  val process = exec (
     http("Process Video")
-    .post("/api/tasks")
-      .body(RawFileBody("#{video}"))
-    .header("Authorization") {
-      "Bearer $token"
-    })
+      .post("/api/tasks")
+      .asMultipartForm()
+      .bodyParts (
+        RawFileBodyPart("file", videos.first())
+      )
+      .header("Authorization") {
+        "Bearer $token"
+      }
+      .check(
+        status().shouldBe(200),
+        jsonPath("$.message")
+          .find().shouldBe("File uploaded successfully"),
+        bodyString().saveAs("BODY")
+      )
+  )
+
+  val baseUrl = propOrElse("BASE_URL") { "https://127.0.0.1:5000" }
 
   val httpProtocol =
-    http.baseUrl("https://127.0.0.1:5000")
+    http.baseUrl(baseUrl)
       .contentTypeHeader("application/json")
 
   val signupLogin = scenario("Token").exec(getToken)
-  val processVideo = scenario("Users").feed(feeder).exec(process)
+  val processVideo = scenario("Users").exec(process)
 
   init {
     setUp(
       signupLogin.injectOpen(atOnceUsers(1)),
-      processVideo.injectOpen(nothingFor(5), rampUsers(10).during(10))
+      processVideo.injectOpen(
+        rampUsersPerSec(0.1).to(10.0).during(60)
+      )
     ).protocols(httpProtocol)
   }
 }

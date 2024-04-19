@@ -8,7 +8,7 @@ object Recorder {
     val props = RecorderPropertiesBuilder()
       .simulationsFolder(IDEPathHelper.gradleSourcesDirectory.toString())
       .resourcesFolder(IDEPathHelper.gradleResourcesDirectory.toString())
-      .simulationPackage("computerdatabase")
+      .simulationPackage("cloud")
       .simulationFormatKotlin()
 
     GatlingRecorder.fromMap(props.build(), Option.apply(IDEPathHelper.recorderConfigFile))
