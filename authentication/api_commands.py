@@ -2,6 +2,7 @@ from flask import request
 from base import Usuario, app, db, usuario_schema
 from flask_jwt_extended import create_access_token
 from sqlalchemy import or_
+import datetime
 
 def validate_password_confirmation(password1, password2):
    return password1 != password2
@@ -41,7 +42,7 @@ def login_user():
    if user is None:
       return "User does not exist. Please try again.", 404
 
-   token_de_acceso = create_access_token(identity=user.id)
+   token_de_acceso = create_access_token(identity=user.id, expires_delta=datetime.timedelta(minutes=5))
 
    return {"mensaje": "Success", "token": token_de_acceso, "id": user.id }
 

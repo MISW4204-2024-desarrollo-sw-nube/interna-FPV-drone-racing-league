@@ -5,17 +5,30 @@ from flask import request, jsonify
 from sqlalchemy import asc, desc
 from werkzeug.utils import secure_filename
 
-from base import app, db, Video, Status, celery_app, video_schema, videos_schema
-from flask_jwt_extended import jwt_required
+from base import app, db, Video, Usuario, Status, celery_app, video_schema, videos_schema
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
-
     pass
+
+def find_user_account_by_id(user_id):
+   return Usuario.query.filter(Usuario.id == user_id).first()
+
+def is_userid_invalid(user_id):
+    if user_id is None:
+         return "Invalid token. Please provide another token.", 400
+
+    if find_user_account_by_id(user_id) is None:
+        return "User does not exist. Please provide another token.", 400
 
 @app.route('/api/tasks', methods=['POST'])
 @jwt_required()
 def upload_video():
+    user_id = get_jwt_identity()
+    if is_userid_invalid(user_id):
+       return is_userid_invalid(user_id)
+
     unprocessed_folder = app.config['UNPROCESSED_FOLDER']
     processed_folder = app.config['PROCESSED_FOLDER']
     logo_file = app.config["LOGO_FILE"]
@@ -52,7 +65,8 @@ def upload_video():
             current_unprocessed_folder,
             filename_with_timestamp
         ),
-        created_on=datetime.datetime.now()
+        created_on=datetime.datetime.now(),
+        owner_id = user_id
     )
     db.session.add(video)
     db.session.commit()
@@ -73,13 +87,16 @@ def upload_video():
         message='File uploaded successfully'
     )
 
-
 @app.route('/api/tasks/<id>', methods=['GET'])
 @jwt_required()
 def get_video(id):
+    user_id = get_jwt_identity()
+    if is_userid_invalid(user_id):
+       return is_userid_invalid(user_id)
+
     if id is None:
         return jsonify(error="No id provided"), 400
-    video = db.session.query(Video).filter(Video.id == id).first()
+    video = db.session.query(Video).filter(Video.id == id, Video.owner_id == user_id).first()
     if video is None:
         return "", 404
     return video_schema.dump(video)
@@ -88,11 +105,15 @@ def get_video(id):
 @app.route('/api/tasks', methods=['GET'])
 @jwt_required()
 def get_video_list():
+    user_id = get_jwt_identity()
+    if is_userid_invalid(user_id):
+       return is_userid_invalid(user_id)
+
     max_value = int(request.args.get('max', 10))
     order_value = int(request.args.get('order', 0))
 
     order_func = desc if order_value == 1 else asc
-    videos = db.session.query(Video).filter(Video.status != Status.deleted).order_by(order_func(Video.id)).limit(max_value)
+    videos = db.session.query(Video).filter(Video.status != Status.deleted, Video.owner_id == user_id).order_by(order_func(Video.id)).limit(max_value)
 
     return videos_schema.dump(videos.all())
 
@@ -100,7 +121,11 @@ def get_video_list():
 @app.route('/api/tasks/<id>', methods=['DELETE'])
 @jwt_required()
 def delete_video(id):
-    video = db.session.query(Video).filter(Video.id == id).first()
+    user_id = get_jwt_identity()
+    if is_userid_invalid(user_id):
+       return is_userid_invalid(user_id)
+
+    video = db.session.query(Video).filter(Video.id == id, Video.owner_id == user_id).first()
     if video is None:
         return "", 404
 
@@ -128,7 +153,6 @@ def delete_video(id):
         return "", 204
     except Exception:
         return jsonify(error=f"Error deleting the video with id:{id}"), 500
-
 
 
 if __name__ == "__main__":

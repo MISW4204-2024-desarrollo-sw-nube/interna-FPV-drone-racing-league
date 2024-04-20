@@ -14,19 +14,31 @@ from sqlalchemy import TIMESTAMP, Enum
 from flask_jwt_extended import JWTManager
 from prometheus_flask_exporter import PrometheusMetrics
 
+database = os.environ['POSTGRES_DB']
+user = os.environ['POSTGRES_USER']
+password = os.environ['POSTGRES_PASSWORD']
+host = os.environ['POSTGRES_HOST']
+port = os.environ['POSTGRES_PORT']
+secretKey = os.environ['JWT_SECRET_KEY']
+root = os.environ['ROOT']
+unproccessedVideosName = os.environ['UNPROCCESSED_VIDEOS_NAME']
+proccessedVideosName = os.environ['PROCESSED_VIDEOS_NAME']
+
+database_url = f'{host}://{user}:{password}@database:{port}/{database}'
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:1234@database:5432/postgres'
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config["SECRET_KEY"] = 'your-secret-key'
-app.config["JWT_SECRET_KEY"] = "1234"  # Change this!
+app.config["JWT_SECRET_KEY"] = secretKey
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
-app.config["ROOT"] = '/shared'
+app.config["ROOT"] = root
 app.config["UNPROCESSED_FOLDER"] = os.path.join(
     app.config["ROOT"],
-    'unprocessed_videos'
+    unproccessedVideosName
 )
 app.config["PROCESSED_FOLDER"] = os.path.join(
     app.config["ROOT"],
-    'processed_videos'
+    proccessedVideosName
 )
 app.config["RESOURCES_FOLDER"] = os.path.join(app.config["ROOT"], 'res')
 app.config["LOGO_FILE"] = os.path.join(
@@ -48,12 +60,17 @@ celery_app = Celery(
 )
 celery_app.config_from_object(celeryconfig)
 
+class Usuario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    useremail = db.Column(db.String(255))
+    username = db.Column(db.String(255))
+    userpassword = db.Column(db.String(255))
+
 class Status(enum.Enum):
     incomplete = "incomplete"
     uploaded = "uploaded"
     processed = "processed"
     deleted = "deleted"
-
 
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -64,7 +81,11 @@ class Video(db.Model):
     updated_at = db.Column(TIMESTAMP,
                            default=datetime.datetime.utcnow)
     processed_file_url = db.Column(db.String(255))
+    owner_id = db.Column(db.Integer, db.ForeignKey("usuario.id"))
 
+class UsuarioSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        fields = ('id', 'useremail', 'username', 'userpassword')
 
 class VideoSchema(ma.SQLAlchemyAutoSchema):
     status = EnumField(Status, by_value=True)
@@ -72,6 +93,6 @@ class VideoSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Video
 
-
+usuario_schema = UsuarioSchema()
 video_schema = VideoSchema()
 videos_schema = VideoSchema(many=True)
