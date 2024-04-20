@@ -19,21 +19,26 @@ user = os.environ['POSTGRES_USER']
 password = os.environ['POSTGRES_PASSWORD']
 host = os.environ['POSTGRES_HOST']
 port = os.environ['POSTGRES_PORT']
+secretKey = os.environ['JWT_SECRET_KEY']
+root = os.environ['ROOT']
+unproccessedVideosName = os.environ['UNPROCCESSED_VIDEOS_NAME']
+proccessedVideosName = os.environ['PROCESSED_VIDEOS_NAME']
+
 database_url = f'{host}://{user}:{password}@database:{port}/{database}'
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config["SECRET_KEY"] = 'your-secret-key'
-app.config["JWT_SECRET_KEY"] = "1234"  # Change this!
+app.config["JWT_SECRET_KEY"] = secretKey
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
-app.config["ROOT"] = '/shared'
+app.config["ROOT"] = root
 app.config["UNPROCESSED_FOLDER"] = os.path.join(
     app.config["ROOT"],
-    'unprocessed_videos'
+    unproccessedVideosName
 )
 app.config["PROCESSED_FOLDER"] = os.path.join(
     app.config["ROOT"],
-    'processed_videos'
+    proccessedVideosName
 )
 app.config["RESOURCES_FOLDER"] = os.path.join(app.config["ROOT"], 'res')
 app.config["LOGO_FILE"] = os.path.join(

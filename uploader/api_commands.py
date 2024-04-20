@@ -15,15 +15,19 @@ def procesar_video(*args):
 def find_user_account_by_id(user_id):
    return Usuario.query.filter(Usuario.id == user_id).first()
 
-@app.route('/api/tasks', methods=['POST'])
-@jwt_required()
-def upload_video():
-    user_id = get_jwt_identity()
+def is_userid_invalid(user_id):
     if user_id is None:
          return "Invalid token. Please provide another token.", 400
 
     if find_user_account_by_id(user_id) is None:
         return "User does not exist. Please provide another token.", 400
+
+@app.route('/api/tasks', methods=['POST'])
+@jwt_required()
+def upload_video():
+    user_id = get_jwt_identity()
+    if is_userid_invalid(user_id):
+       return is_userid_invalid(user_id)
 
     unprocessed_folder = app.config['UNPROCESSED_FOLDER']
     processed_folder = app.config['PROCESSED_FOLDER']
@@ -83,16 +87,12 @@ def upload_video():
         message='File uploaded successfully'
     )
 
-
 @app.route('/api/tasks/<id>', methods=['GET'])
 @jwt_required()
 def get_video(id):
     user_id = get_jwt_identity()
-    if user_id is None:
-         return "Invalid token. Please provide another token.", 400
-
-    if find_user_account_by_id(user_id) is None:
-        return "User does not exist. Please provide another token.", 400
+    if is_userid_invalid(user_id):
+       return is_userid_invalid(user_id)
 
     if id is None:
         return jsonify(error="No id provided"), 400
@@ -106,11 +106,8 @@ def get_video(id):
 @jwt_required()
 def get_video_list():
     user_id = get_jwt_identity()
-    if user_id is None:
-         return "Invalid token. Please provide another token.", 400
-
-    if find_user_account_by_id(user_id) is None:
-        return "User does not exist. Please provide another token.", 400
+    if is_userid_invalid(user_id):
+       return is_userid_invalid(user_id)
 
     max_value = int(request.args.get('max', 10))
     order_value = int(request.args.get('order', 0))
@@ -125,11 +122,8 @@ def get_video_list():
 @jwt_required()
 def delete_video(id):
     user_id = get_jwt_identity()
-    if user_id is None:
-         return "Invalid token. Please provide another token.", 400
-
-    if find_user_account_by_id(user_id) is None:
-        return "User does not exist. Please provide another token.", 400
+    if is_userid_invalid(user_id):
+       return is_userid_invalid(user_id)
 
     video = db.session.query(Video).filter(Video.id == id, Video.owner_id == user_id).first()
     if video is None:
@@ -159,7 +153,6 @@ def delete_video(id):
         return "", 204
     except Exception:
         return jsonify(error=f"Error deleting the video with id:{id}"), 500
-
 
 
 if __name__ == "__main__":

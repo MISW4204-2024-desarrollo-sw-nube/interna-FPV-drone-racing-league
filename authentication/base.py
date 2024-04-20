@@ -16,10 +16,11 @@ password = os.environ['POSTGRES_PASSWORD']
 host = os.environ['POSTGRES_HOST']
 port = os.environ['POSTGRES_PORT']
 database_url = f'{host}://{user}:{password}@database:{port}/{database}'
+secretKey = os.environ['JWT_SECRET_KEY']
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] =  database_url
-app.config["JWT_SECRET_KEY"] = "1234"  # Change this!
+app.config["JWT_SECRET_KEY"] = secretKey
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 app_context = app.app_context()
 app_context.push()
