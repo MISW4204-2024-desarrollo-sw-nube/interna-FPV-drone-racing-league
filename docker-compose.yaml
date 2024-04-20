@@ -16,6 +16,10 @@ services:
       - POSTGRES_PASSWORD=1234
       - POSTGRES_PORT=5432
       - POSTGRES_HOST=postgresql+psycopg2
+      - JWT_SECRET_KEY=1234
+      - ROOT=/shared
+      - UNPROCCESSED_VIDEOS_NAME=unprocessed_videos
+      - PROCESSED_VIDEOS_NAME=processed_videos
 
   celery-exporter:
     image: danihodovic/celery-exporter
