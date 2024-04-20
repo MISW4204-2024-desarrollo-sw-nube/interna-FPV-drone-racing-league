@@ -16,5 +16,6 @@ COPY ./uploader/celeryconfig.py .
 RUN pip install -r requirements.txt
 
 RUN ["chmod", "+x", "celery.sh"]
+
 # Run Celery with the "batch_video" queue
-ENTRYPOINT ["/app/celery.sh"]
+CMD ["/app/celery.sh"]
