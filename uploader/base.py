@@ -24,7 +24,7 @@ root = os.environ['ROOT']
 unproccessedVideosName = os.environ['UNPROCCESSED_VIDEOS_NAME']
 proccessedVideosName = os.environ['PROCESSED_VIDEOS_NAME']
 
-database_url = f'{host}://{user}:{password}@database:{port}/{database}'
+database_url = f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url

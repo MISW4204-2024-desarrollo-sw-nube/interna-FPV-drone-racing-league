@@ -15,7 +15,7 @@ user = os.environ['POSTGRES_USER']
 password = os.environ['POSTGRES_PASSWORD']
 host = os.environ['POSTGRES_HOST']
 port = os.environ['POSTGRES_PORT']
-database_url = f'{host}://{user}:{password}@database:{port}/{database}'
+database_url = f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'
 secretKey = os.environ['JWT_SECRET_KEY']
 
 app = Flask(__name__)
