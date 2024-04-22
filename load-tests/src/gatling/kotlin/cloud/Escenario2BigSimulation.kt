@@ -1,6 +1,5 @@
 package cloud
 
-import io.gatling.http.client.body.form.FormUrlEncodedRequestBody
 import io.gatling.javaapi.core.CoreDsl.*
 import io.gatling.javaapi.core.Simulation
 import io.gatling.javaapi.http.HttpDsl.*
@@ -17,7 +16,7 @@ import scala.util.Properties.*
  * - [Gatling quickstart tutorial](https://gatling.io/docs/gatling/tutorials/quickstart)
  * - [Gatling advanced tutorial](https://gatling.io/docs/gatling/tutorials/advanced)
  */
-class Escenario2Simulation : Simulation() {
+class Escenario2BigSimulation : Simulation() {
 
 
   fun iterateResources(resourceDir: String): List<String> {
@@ -32,7 +31,7 @@ class Escenario2Simulation : Simulation() {
     return files.toList()
   }
 
-  val videos = listOf("videos/small_20s.mp4")//iterateResources("videos")
+  val videos = listOf("videos/video_big.mp4")//iterateResources("videos")
 
   val feeder = listFeeder(videos.map {
     mapOf("video" to it)
@@ -97,7 +96,7 @@ class Escenario2Simulation : Simulation() {
       )
   )
 
-  val baseUrl = propOrElse("BASE_URL") { "https://127.0.0.1:5000" }
+  val baseUrl = propOrElse("BASE_URL") { "https://35.196.85.247" }
 
   val httpProtocol =
     http.baseUrl(baseUrl)
@@ -110,7 +109,7 @@ class Escenario2Simulation : Simulation() {
     setUp(
       signupLogin.injectOpen(atOnceUsers(1)),
       processVideo.injectOpen(
-        rampUsersPerSec(0.1).to(10.0).during(60)
+        rampUsersPerSec(1/60.0).to(1/30.0).during(300)
       )
     ).protocols(httpProtocol)
   }

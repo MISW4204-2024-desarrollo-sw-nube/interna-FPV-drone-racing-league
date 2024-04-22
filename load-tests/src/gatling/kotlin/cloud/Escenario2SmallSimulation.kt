@@ -3,12 +3,12 @@ package cloud
 import io.gatling.javaapi.core.CoreDsl.*
 import io.gatling.javaapi.core.Simulation
 import io.gatling.javaapi.http.HttpDsl.*
-import scala.util.Properties
 import scala.util.Random
 import java.lang.invoke.MethodHandles
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import kotlin.io.path.extension
+import scala.util.Properties.*
 
 /**
  * This sample is based on our official tutorials:
@@ -16,7 +16,8 @@ import kotlin.io.path.extension
  * - [Gatling quickstart tutorial](https://gatling.io/docs/gatling/tutorials/quickstart)
  * - [Gatling advanced tutorial](https://gatling.io/docs/gatling/tutorials/advanced)
  */
-class Escenario1Simulation : Simulation() {
+class Escenario2SmallSimulation : Simulation() {
+
 
   fun iterateResources(resourceDir: String): List<String> {
     val resource = MethodHandles.lookup().lookupClass().classLoader.getResource(resourceDir)
@@ -95,8 +96,7 @@ class Escenario1Simulation : Simulation() {
       )
   )
 
-  val baseUrl = Properties.propOrElse("BASE_URL") { "https://35.196.85.247" }
-
+  val baseUrl = propOrElse("BASE_URL") { "https://35.196.85.247" }
 
   val httpProtocol =
     http.baseUrl(baseUrl)
@@ -108,8 +108,8 @@ class Escenario1Simulation : Simulation() {
   init {
     setUp(
       signupLogin.injectOpen(atOnceUsers(1)),
-      processVideo.injectClosed(
-        rampConcurrentUsers(70).to(85).during(60)
+      processVideo.injectOpen(
+        rampUsersPerSec(1/60.0).to(1/30.0).during(300)
       )
     ).protocols(httpProtocol)
   }
