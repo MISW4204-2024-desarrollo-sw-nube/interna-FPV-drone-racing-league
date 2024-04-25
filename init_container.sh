@@ -1,8 +1,8 @@
 #!/bin/bash
 # Obtenido de https://tomroth.dev/gcp-docker/
-INSTANCE=$(curl http://metadata.google.internal/computeMetadata/v1/instance/attributes/instance -H "Metadata-Flavor: Google")
+SERVICE=$(curl http://metadata.google.internal/computeMetadata/v1/instance/attributes/instance -H "Metadata-Flavor: Google")
 
-echo $INSTANCE
+echo $SERVICE
 
 sudo apt update 
 sudo apt install --yes apt-transport-https ca-certificates curl gnupg2 software-properties-common
@@ -18,4 +18,4 @@ git clone https://github.com/MISW4204-2024-desarrollo-sw-nube/interna-FPV-drone-
 
 cd interna-FPV-drone-racing-league
 
-docker compose up $INSTANCE
+docker compose up $SERVICE
