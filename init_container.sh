@@ -1,5 +1,9 @@
 #!/bin/bash
 # Obtenido de https://tomroth.dev/gcp-docker/
+INSTANCE=$(curl http://metadata.google.internal/computeMetadata/v1/instance/attributes/instance -H "Metadata-Flavor: Google")
+
+echo $INSTANCE
+
 sudo apt update 
 sudo apt install --yes apt-transport-https ca-certificates curl gnupg2 software-properties-common
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
@@ -11,3 +15,7 @@ sudo apt-get install git
 
 # Clonando el repo
 git clone https://github.com/MISW4204-2024-desarrollo-sw-nube/interna-FPV-drone-racing-league.git
+
+cd interna-FPV-drone-racing-league
+
+docker compose up $INSTANCE
