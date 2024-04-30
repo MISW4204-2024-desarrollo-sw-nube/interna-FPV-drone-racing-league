@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 
 from base import app, db, Video, Usuario, Status, celery_app, video_schema, videos_schema
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from google.cloud import storage
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
@@ -58,6 +59,23 @@ def upload_video():
     # Save the file
     file.save(os.path.join(current_unprocessed_folder, filename_with_timestamp))
     file.close()
+
+    # Upload to GCS bucket
+    bucket_name = 'ifpv-videos'
+    source_file_name = os.path.join(current_unprocessed_folder, filename_with_timestamp)
+    destination_blob_name = f"unprocessed_videos/{filename_with_timestamp}"
+
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+
+    generation_match_precondition = 0
+
+    blob.upload_from_filename(source_file_name, if_generation_match=generation_match_precondition)
+
+    print(
+        f"File {source_file_name} uploaded to {destination_blob_name}."
+    )
 
     video = Video(
         status=Status.uploaded,

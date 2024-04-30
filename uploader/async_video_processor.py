@@ -5,6 +5,7 @@ import celeryconfig
 from celery import Celery
 from celery.utils.log import get_task_logger
 from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
+from google.cloud import storage
 
 from base import Status, Video, db
 
@@ -63,6 +64,23 @@ def procesar_video(
         )
         processed_video.write_videofile(processed_file_name)
         logger.info(f"Processed video: {processed_file_name}")
+
+        # Upload to GCS bucket
+        bucket_name = 'ifpv-videos'
+        source_file_name = os.path.join(current_processed_folder, 'processed_' + unprocessed_file_name)
+        destination_blob_name = f"processed_videos/processed_{unprocessed_file_name}"
+
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(destination_blob_name)
+
+        generation_match_precondition = 0
+
+        blob.upload_from_filename(source_file_name, if_generation_match=generation_match_precondition)
+
+        print(
+            f"File {source_file_name} uploaded to {destination_blob_name}."
+        )
 
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.updated_at: datetime.datetime.now(), Video.status: Status.processed,
