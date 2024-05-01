@@ -22,7 +22,9 @@ def procesar_video(
     current_unprocessed_folder,
     current_processed_folder,
     logo_file_path,
-    video_id
+    video_id,
+    cloud_storage_bucket,
+    proccessedVideosName
 ):
     try:
         # Process the video
@@ -58,37 +60,32 @@ def procesar_video(
         logger.info("Cropped video")
 
         # Save the final video
-        processed_file_name = os.path.join(
+        processed_file_name = 'processed_' + unprocessed_file_name
+        processed_file_path = os.path.join(
             current_processed_folder,
-            'processed_' + unprocessed_file_name
+            processed_file_name
         )
-        processed_video.write_videofile(processed_file_name)
-        logger.info(f"Processed video: {processed_file_name}")
+        processed_video.write_videofile(processed_file_path)
+        logger.info(f"Processed video: {processed_file_path}")
 
         # Upload to GCS bucket
-        bucket_name = 'ifpv-videos'
-        source_file_name = os.path.join(current_processed_folder, 'processed_' + unprocessed_file_name)
-        destination_blob_name = f"processed_videos/processed_{unprocessed_file_name}"
+        source_file_name = os.path.join(current_processed_folder, processed_file_name)
+        destination_blob_name = f"{proccessedVideosName}/{processed_file_name}"
 
         storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
+        bucket = storage_client.bucket(cloud_storage_bucket)
         blob = bucket.blob(destination_blob_name)
 
-        generation_match_precondition = 0
+        blob.upload_from_filename(source_file_name)
 
-        blob.upload_from_filename(source_file_name, if_generation_match=generation_match_precondition)
-
-        print(
-            f"File {source_file_name} uploaded to {destination_blob_name}."
-        )
 
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.updated_at: datetime.datetime.now(), Video.status: Status.processed,
-             Video.processed_file_url: processed_file_name}
+             Video.processed_file_url: processed_file_path}
         )
         db.session.commit()
         logger.info(
-            f"Saved video in db: {processed_file_name} with id: {video_id}")
+            f"Saved video in db: {processed_file_path} with id: {video_id}")
     except Exception:
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.status: Status.incomplete, Video.processed_file_url: None}

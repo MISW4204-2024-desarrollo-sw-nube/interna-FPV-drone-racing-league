@@ -20,6 +20,8 @@ services:
       - ROOT=/shared
       - UNPROCCESSED_VIDEOS_NAME=unprocessed_videos
       - PROCESSED_VIDEOS_NAME=processed_videos
+      - GCLOUD_PROJECT=ifpv-drone-racing-league-003
+      - CS_BUCKET_NAME=ifpv-videos
 
   celery-exporter:
     image: danihodovic/celery-exporter
@@ -57,6 +59,8 @@ services:
       - ROOT=/shared
       - UNPROCCESSED_VIDEOS_NAME=unprocessed_videos
       - PROCESSED_VIDEOS_NAME=processed_videos
+      - GCLOUD_PROJECT=ifpv-drone-racing-league-003
+      - CS_BUCKET_NAME=ifpv-videos
     depends_on:
       - database
     networks:

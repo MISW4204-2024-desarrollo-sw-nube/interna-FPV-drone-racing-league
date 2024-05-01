@@ -33,6 +33,9 @@ def upload_video():
     unprocessed_folder = app.config['UNPROCESSED_FOLDER']
     processed_folder = app.config['PROCESSED_FOLDER']
     logo_file = app.config["LOGO_FILE"]
+    cloud_storage_bucket = app.config["CS_BUCKET_NAME"]
+    unproccessedVideosName = os.environ['UNPROCCESSED_VIDEOS_NAME']
+    proccessedVideosName = os.environ['PROCESSED_VIDEOS_NAME']
 
     if 'file' not in request.files:
         return 'No file part'
@@ -61,21 +64,18 @@ def upload_video():
     file.close()
 
     # Upload to GCS bucket
-    bucket_name = 'ifpv-videos'
-    source_file_name = os.path.join(current_unprocessed_folder, filename_with_timestamp)
-    destination_blob_name = f"unprocessed_videos/{filename_with_timestamp}"
+    try:
+        source_file_name = os.path.join(current_unprocessed_folder, filename_with_timestamp)
+        destination_blob_name = f"{unproccessedVideosName}/{filename_with_timestamp}"
 
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(destination_blob_name)
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(cloud_storage_bucket)
+        blob = bucket.blob(destination_blob_name)
 
-    generation_match_precondition = 0
+        blob.upload_from_filename(source_file_name)
+    except Exception:
+        return jsonify(error=f"Error uploading video to Google Cloud Storage"), 500
 
-    blob.upload_from_filename(source_file_name, if_generation_match=generation_match_precondition)
-
-    print(
-        f"File {source_file_name} uploaded to {destination_blob_name}."
-    )
 
     video = Video(
         status=Status.uploaded,
@@ -94,7 +94,9 @@ def upload_video():
         current_unprocessed_folder,
         current_processed_folder,
         logo_file,
-        video.id
+        video.id,
+        cloud_storage_bucket,
+        proccessedVideosName
     ]
 
     # Call celery
