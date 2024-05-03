@@ -60,8 +60,6 @@ def upload_video():
     # Create the current date folders
     current_unprocessed_folder = os.path.join(unprocessed_folder, current_date)
     current_processed_folder = os.path.join(processed_folder, current_date)
-    os.makedirs(current_unprocessed_folder, exist_ok=True)
-    os.makedirs(current_processed_folder, exist_ok=True)
 
     filename = secure_filename(file.filename) if file.filename else None
     if not filename:
@@ -71,30 +69,21 @@ def upload_video():
     extension = os.path.splitext(filename)[1]
     filename_with_timestamp = f"{filename_without_ext}_{current_time}{extension}"
 
-    # Save the file
-    file.save(os.path.join(current_unprocessed_folder, filename_with_timestamp))
-    file.close()
-
     # Upload to GCS bucket
     try:
-        source_file_name = os.path.join(
-            current_unprocessed_folder, filename_with_timestamp
-        )
         destination_blob_name = f"{unproccessedVideosName}/{filename_with_timestamp}"
 
         storage_client = storage.Client()
         bucket = storage_client.bucket(cloud_storage_bucket)
         blob = bucket.blob(destination_blob_name)
 
-        blob.upload_from_filename(source_file_name)
+        blob.upload_from_file(file)
     except Exception:
         return jsonify(error="Error uploading video to Google Cloud Storage"), 500
 
     video = Video(
         status=Status.uploaded,
-        uploaded_file_url=os.path.join(
-            current_unprocessed_folder, filename_with_timestamp
-        ),
+        uploaded_file_url=destination_blob_name,
         created_on=datetime.datetime.now(),
         owner_id=user_id,
     )
@@ -109,6 +98,7 @@ def upload_video():
         video.id,
         cloud_storage_bucket,
         proccessedVideosName,
+        unproccessedVideosName,
     ]
 
     # Call celery
@@ -164,6 +154,8 @@ def delete_video(id):
     if is_userid_invalid(user_id):
         return is_userid_invalid(user_id)
 
+    cloud_storage_bucket = app.config["CS_BUCKET_NAME"]
+
     video = (
         db.session.query(Video)
         .filter(Video.id == id, Video.owner_id == user_id)
@@ -175,9 +167,12 @@ def delete_video(id):
     if video.status == Status.deleted:
         return jsonify(error=f"Video with id:{id} is already deleted"), 400
 
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(cloud_storage_bucket)
     # delete the unprocessed and processed files
     try:
-        os.remove(video.uploaded_file_url)
+        blob = bucket.blob(video.uploaded_file_url)
+        blob.delete()
         video.uploaded_file_url = None
     except Exception:
         return jsonify(
@@ -185,7 +180,8 @@ def delete_video(id):
         ), 500
 
     try:
-        os.remove(video.processed_file_url)
+        blob = bucket.blob(video.processed_file_url)
+        blob.delete()
         video.processed_file_url = None
     except Exception:
         return jsonify(

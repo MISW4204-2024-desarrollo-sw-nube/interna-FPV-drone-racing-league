@@ -1,13 +1,12 @@
 import datetime
 import os
-import celeryconfig
 
+import celeryconfig
+from base import Status, Video, db
 from celery import Celery
 from celery.utils.log import get_task_logger
-from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip
 from google.cloud import storage
-
-from base import Status, Video, db
+from moviepy.editor import ImageClip, VideoFileClip, concatenate_videoclips
 
 celery = Celery(
     "async_video_processor",
@@ -24,15 +23,27 @@ def procesar_video(
     logo_file_path,
     video_id,
     cloud_storage_bucket,
-    proccessedVideosName
+    proccessedVideosName,
+    unproccessedVideosName,
 ):
+    unprocessed_file_path = os.path.join(
+        current_unprocessed_folder, unprocessed_file_name
+    )
+    processed_file_path = None
     try:
+        # Download unprocessed from GCS bucket
+        logger.info("Started downloading video...")
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(cloud_storage_bucket)
+
+        unprocessed_blob_name = f"{unproccessedVideosName}/{unprocessed_file_name}"
+        blob = bucket.blob(unprocessed_blob_name)
+        blob.download_to_filename(unprocessed_file_path)
+        logger.info("Downloaded video")
+
         # Process the video
         logger.info("Started processing video...")
-        unprocessed_video = VideoFileClip(os.path.join(
-            current_unprocessed_folder,
-            unprocessed_file_name)
-        )
+        unprocessed_video = VideoFileClip(unprocessed_file_path)
 
         # Shorten the video if it's longer than 20 seconds
         if unprocessed_video.duration > 20:
@@ -46,48 +57,50 @@ def procesar_video(
         )
 
         # Change the aspect ratio to 16:9
-        processed_video = processed_video.resize(
-            height=720
-        )
+        processed_video = processed_video.resize(height=720)
         # Resize height to 720p
         logger.info("Resized video")
         processed_video = processed_video.crop(
             x_center=processed_video.w / 2,
             y_center=processed_video.h / 2,
             width=1280,
-            height=720
+            height=720,
         )  # Crop to 16:9
         logger.info("Cropped video")
 
         # Save the final video
-        processed_file_name = 'processed_' + unprocessed_file_name
+        processed_file_name = "processed_" + unprocessed_file_name
         processed_file_path = os.path.join(
-            current_processed_folder,
-            processed_file_name
+            current_processed_folder, processed_file_name
         )
         processed_video.write_videofile(processed_file_path)
         logger.info(f"Processed video: {processed_file_path}")
 
         # Upload to GCS bucket
-        source_file_name = os.path.join(current_processed_folder, processed_file_name)
         destination_blob_name = f"{proccessedVideosName}/{processed_file_name}"
-
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(cloud_storage_bucket)
         blob = bucket.blob(destination_blob_name)
-
-        blob.upload_from_filename(source_file_name)
-
+        with open(processed_file_path, "rb") as file:
+            logger.info("Started uploading video...")
+            blob.upload_from_file(file)
+            logger.info("Uploaded video")
 
         db.session.query(Video).filter(Video.id == video_id).update(
-            {Video.updated_at: datetime.datetime.now(), Video.status: Status.processed,
-             Video.processed_file_url: processed_file_path}
+            {
+                Video.updated_at: datetime.datetime.now(),
+                Video.status: Status.processed,
+                Video.processed_file_url: destination_blob_name,
+            }
         )
         db.session.commit()
-        logger.info(
-            f"Saved video in db: {processed_file_path} with id: {video_id}")
+        logger.info(f"Saved video in db: {processed_file_path} with id: {video_id}")
     except Exception:
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.status: Status.incomplete, Video.processed_file_url: None}
         )
         db.session.commit()
+    try:
+        # Remove files from local storage
+        os.remove(unprocessed_file_path)
+        os.remove(processed_file_path)
+    except Exception as e:
+        logger.error(f"Error removing files: {e}")
