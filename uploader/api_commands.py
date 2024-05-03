@@ -1,45 +1,61 @@
 import datetime
 import os
 
-from flask import request, jsonify
+from base import (
+    Status,
+    Usuario,
+    Video,
+    app,
+    celery_app,
+    db,
+    video_schema,
+    videos_schema,
+)
+from flask import jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
+from google.cloud import storage
 from sqlalchemy import asc, desc
 from werkzeug.utils import secure_filename
 
-from base import app, db, Video, Usuario, Status, celery_app, video_schema, videos_schema
-from flask_jwt_extended import jwt_required, get_jwt_identity
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
     pass
 
+
 def find_user_account_by_id(user_id):
-   return Usuario.query.filter(Usuario.id == user_id).first()
+    return Usuario.query.filter(Usuario.id == user_id).first()
+
 
 def is_userid_invalid(user_id):
     if user_id is None:
-         return "Invalid token. Please provide another token.", 400
+        return "Invalid token. Please provide another token.", 400
 
     if find_user_account_by_id(user_id) is None:
         return "User does not exist. Please provide another token.", 400
 
-@app.route('/api/tasks', methods=['POST'])
+
+@app.route("/api/tasks", methods=["POST"])
 @jwt_required()
 def upload_video():
     user_id = get_jwt_identity()
     if is_userid_invalid(user_id):
-       return is_userid_invalid(user_id)
+        return is_userid_invalid(user_id)
 
-    unprocessed_folder = app.config['UNPROCESSED_FOLDER']
-    processed_folder = app.config['PROCESSED_FOLDER']
+    unprocessed_folder = app.config["UNPROCESSED_FOLDER"]
+    processed_folder = app.config["PROCESSED_FOLDER"]
     logo_file = app.config["LOGO_FILE"]
+    cloud_storage_bucket = app.config["CS_BUCKET_NAME"]
+    unproccessedVideosName = os.environ["UNPROCCESSED_VIDEOS_NAME"]
+    proccessedVideosName = os.environ["PROCESSED_VIDEOS_NAME"]
 
-    if 'file' not in request.files:
-        return 'No file part'
-    file = request.files['file']
+    if "file" not in request.files:
+        return "No file part"
+    file = request.files["file"]
     # Get the current date  and time as a string
 
-    current_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    current_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
     # Create the current date folders
     current_unprocessed_folder = os.path.join(unprocessed_folder, current_date)
@@ -49,7 +65,7 @@ def upload_video():
 
     filename = secure_filename(file.filename) if file.filename else None
     if not filename:
-        return 'Invalid file'
+        return "Invalid file"
 
     filename_without_ext = os.path.splitext(filename)[0]
     extension = os.path.splitext(filename)[1]
@@ -59,14 +75,28 @@ def upload_video():
     file.save(os.path.join(current_unprocessed_folder, filename_with_timestamp))
     file.close()
 
+    # Upload to GCS bucket
+    try:
+        source_file_name = os.path.join(
+            current_unprocessed_folder, filename_with_timestamp
+        )
+        destination_blob_name = f"{unproccessedVideosName}/{filename_with_timestamp}"
+
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(cloud_storage_bucket)
+        blob = bucket.blob(destination_blob_name)
+
+        blob.upload_from_filename(source_file_name)
+    except Exception:
+        return jsonify(error="Error uploading video to Google Cloud Storage"), 500
+
     video = Video(
         status=Status.uploaded,
         uploaded_file_url=os.path.join(
-            current_unprocessed_folder,
-            filename_with_timestamp
+            current_unprocessed_folder, filename_with_timestamp
         ),
         created_on=datetime.datetime.now(),
-        owner_id = user_id
+        owner_id=user_id,
     )
     db.session.add(video)
     db.session.commit()
@@ -76,56 +106,69 @@ def upload_video():
         current_unprocessed_folder,
         current_processed_folder,
         logo_file,
-        video.id
+        video.id,
+        cloud_storage_bucket,
+        proccessedVideosName,
     ]
 
     # Call celery
-    procesar_video.apply_async(args=args, queue='batch_videos')
+    procesar_video.apply_async(args=args, queue="batch_videos")
 
-    return jsonify(
-        id=video.id,
-        message='File uploaded successfully'
-    )
+    return jsonify(id=video.id, message="File uploaded successfully")
 
-@app.route('/api/tasks/<id>', methods=['GET'])
+
+@app.route("/api/tasks/<id>", methods=["GET"])
 @jwt_required()
 def get_video(id):
     user_id = get_jwt_identity()
     if is_userid_invalid(user_id):
-       return is_userid_invalid(user_id)
+        return is_userid_invalid(user_id)
 
     if id is None:
         return jsonify(error="No id provided"), 400
-    video = db.session.query(Video).filter(Video.id == id, Video.owner_id == user_id).first()
+    video = (
+        db.session.query(Video)
+        .filter(Video.id == id, Video.owner_id == user_id)
+        .first()
+    )
     if video is None:
         return "", 404
     return video_schema.dump(video)
 
 
-@app.route('/api/tasks', methods=['GET'])
+@app.route("/api/tasks", methods=["GET"])
 @jwt_required()
 def get_video_list():
     user_id = get_jwt_identity()
     if is_userid_invalid(user_id):
-       return is_userid_invalid(user_id)
+        return is_userid_invalid(user_id)
 
-    max_value = int(request.args.get('max', 10))
-    order_value = int(request.args.get('order', 0))
+    max_value = int(request.args.get("max", 10))
+    order_value = int(request.args.get("order", 0))
 
     order_func = desc if order_value == 1 else asc
-    videos = db.session.query(Video).filter(Video.status != Status.deleted, Video.owner_id == user_id).order_by(order_func(Video.id)).limit(max_value)
+    videos = (
+        db.session.query(Video)
+        .filter(Video.status != Status.deleted, Video.owner_id == user_id)
+        .order_by(order_func(Video.id))
+        .limit(max_value)
+    )
 
     return videos_schema.dump(videos.all())
 
 
-@app.route('/api/tasks/<id>', methods=['DELETE'])
+@app.route("/api/tasks/<id>", methods=["DELETE"])
 @jwt_required()
 def delete_video(id):
     user_id = get_jwt_identity()
     if is_userid_invalid(user_id):
-       return is_userid_invalid(user_id)
+        return is_userid_invalid(user_id)
 
-    video = db.session.query(Video).filter(Video.id == id, Video.owner_id == user_id).first()
+    video = (
+        db.session.query(Video)
+        .filter(Video.id == id, Video.owner_id == user_id)
+        .first()
+    )
     if video is None:
         return "", 404
 
@@ -137,13 +180,17 @@ def delete_video(id):
         os.remove(video.uploaded_file_url)
         video.uploaded_file_url = None
     except Exception:
-        return jsonify(error=f"Error deleting the uploaded video file with id:{id}"), 500
+        return jsonify(
+            error=f"Error deleting the uploaded video file with id:{id}"
+        ), 500
 
     try:
         os.remove(video.processed_file_url)
         video.processed_file_url = None
     except Exception:
-        return jsonify(error=f"Error deleting the processed video file with id:{id}"), 500
+        return jsonify(
+            error=f"Error deleting the processed video file with id:{id}"
+        ), 500
 
     # Update status of the video record
     try:
@@ -156,4 +203,4 @@ def delete_video(id):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", ssl_context='adhoc')
+    app.run(host="0.0.0.0", ssl_context="adhoc")

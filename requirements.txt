@@ -8,3 +8,4 @@ requests
 pylint
 pyopenssl
 flask-jwt-extended
+google-cloud-storage

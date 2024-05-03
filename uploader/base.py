@@ -32,6 +32,7 @@ app.config["SECRET_KEY"] = 'your-secret-key'
 app.config["JWT_SECRET_KEY"] = secretKey
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 app.config["ROOT"] = root
+app.config["CS_BUCKET_NAME"] = os.environ['CS_BUCKET_NAME']
 app.config["UNPROCESSED_FOLDER"] = os.path.join(
     app.config["ROOT"],
     unproccessedVideosName
