@@ -19,3 +19,10 @@ git clone https://github.com/MISW4204-2024-desarrollo-sw-nube/interna-FPV-drone-
 cd interna-FPV-drone-racing-league
 
 docker compose up $SERVICE
+
+# Instalación de agentes logs para monitoreo
+if $SERVICE == "uploader"
+then
+    curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+    sudo bash add-google-cloud-ops-agent-repo.sh --also-install
+    sudo systemctl status google-cloud-ops-agent"*"
