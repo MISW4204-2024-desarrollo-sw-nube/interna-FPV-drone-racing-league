@@ -25,6 +25,7 @@ def procesar_video(
     cloud_storage_bucket,
     proccessedVideosName,
     unproccessedVideosName,
+    user_id,
 ):
     unprocessed_file_path = os.path.join(
         current_unprocessed_folder, unprocessed_file_name
@@ -36,7 +37,9 @@ def procesar_video(
         storage_client = storage.Client()
         bucket = storage_client.bucket(cloud_storage_bucket)
 
-        unprocessed_blob_name = f"{unproccessedVideosName}/{unprocessed_file_name}"
+        unprocessed_blob_name = (
+            f"{unproccessedVideosName}/{user_id}/{unprocessed_file_name}"
+        )
         blob = bucket.blob(unprocessed_blob_name)
         blob.download_to_filename(unprocessed_file_path)
         logger.info("Downloaded video")
@@ -77,7 +80,9 @@ def procesar_video(
         logger.info(f"Processed video: {processed_file_path}")
 
         # Upload to GCS bucket
-        destination_blob_name = f"{proccessedVideosName}/{processed_file_name}"
+        destination_blob_name = (
+            f"{proccessedVideosName}/{user_id}/{processed_file_name}"
+        )
         blob = bucket.blob(destination_blob_name)
         with open(processed_file_path, "rb") as file:
             logger.info("Started uploading video...")

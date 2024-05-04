@@ -71,7 +71,9 @@ def upload_video():
 
     # Upload to GCS bucket
     try:
-        destination_blob_name = f"{unproccessedVideosName}/{filename_with_timestamp}"
+        destination_blob_name = (
+            f"{unproccessedVideosName}/{user_id}/{filename_with_timestamp}"
+        )
 
         storage_client = storage.Client()
         bucket = storage_client.bucket(cloud_storage_bucket)
