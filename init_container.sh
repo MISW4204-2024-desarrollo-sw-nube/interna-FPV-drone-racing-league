@@ -4,6 +4,12 @@ SERVICE=$(curl http://metadata.google.internal/computeMetadata/v1/instance/attri
 
 echo $SERVICE
 
+# Instalación de agentes logs para monitoreo
+sudo apt-get update
+curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+sudo bash add-google-cloud-ops-agent-repo.sh --also-install
+sudo systemctl status google-cloud-ops-agent"*"
+
 sudo apt update 
 sudo apt install --yes apt-transport-https ca-certificates curl gnupg2 software-properties-common
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
