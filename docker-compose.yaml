@@ -49,6 +49,8 @@ services:
       - ./shared:/shared/
     working_dir: /backend/
     command: python api_commands.py
+    ports:
+      - 80:5000
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
@@ -61,8 +63,6 @@ services:
       - PROCESSED_VIDEOS_NAME=processed_videos
       - GCLOUD_PROJECT=ifpv-drone-racing-league-003
       - CS_BUCKET_NAME=ifpv-videos
-    depends_on:
-      - database
     networks:
       network:
 
@@ -72,6 +72,8 @@ services:
       - ./authentication:/mnt/
     working_dir: /backend/
     command: python api_commands.py
+    ports:
+      - 80:5000
     depends_on:
       - database
     environment:
