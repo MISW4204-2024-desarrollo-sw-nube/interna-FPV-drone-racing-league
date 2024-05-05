@@ -41,6 +41,7 @@ def procesar_video(
             f"{unproccessedVideosName}/{user_id}/{unprocessed_file_name}"
         )
         blob = bucket.blob(unprocessed_blob_name)
+        os.makedirs(current_unprocessed_folder, exist_ok=True)
         blob.download_to_filename(unprocessed_file_path)
         logger.info("Downloaded video")
 
@@ -98,7 +99,7 @@ def procesar_video(
         )
         db.session.commit()
         logger.info(f"Saved video in db: {processed_file_path} with id: {video_id}")
-    except Exception:
+    except Exception as e:
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.status: Status.incomplete, Video.processed_file_url: None}
         )
