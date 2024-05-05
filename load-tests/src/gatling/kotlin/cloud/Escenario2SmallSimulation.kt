@@ -96,7 +96,7 @@ class Escenario2SmallSimulation : Simulation() {
       )
   )
 
-  val baseUrl = propOrElse("BASE_URL") { "https://35.196.85.247" }
+  val baseUrl = propOrElse("BASE_URL") { "http://35.196.85.247" }
 
   val httpProtocol =
     http.baseUrl(baseUrl)

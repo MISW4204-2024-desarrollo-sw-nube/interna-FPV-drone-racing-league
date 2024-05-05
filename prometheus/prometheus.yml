@@ -13,9 +13,6 @@ scrape_configs:
           - 'prometheus:9090'
           - 'celery-exporter:9808'
   - job_name: flask-services
-    scheme: https
-    tls_config:
-      insecure_skip_verify: true
     static_configs:
       - targets:
           - 'authentication:5000'

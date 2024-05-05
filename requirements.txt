@@ -6,6 +6,5 @@ SQLAlchemy
 marshmallow-sqlalchemy
 requests
 pylint
-pyopenssl
 flask-jwt-extended
 google-cloud-storage
