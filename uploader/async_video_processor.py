@@ -77,6 +77,7 @@ def procesar_video(
         processed_file_path = os.path.join(
             current_processed_folder, processed_file_name
         )
+        os.makedirs(current_processed_folder, exist_ok=True)
         processed_video.write_videofile(processed_file_path)
         logger.info(f"Processed video: {processed_file_path}")
 
