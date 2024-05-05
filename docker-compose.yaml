@@ -26,7 +26,7 @@ services:
   celery-exporter:
     image: danihodovic/celery-exporter
     environment:
-      CE_BROKER_URL: redis://broker:6379/0
+      CE_BROKER_URL: redis://10.142.0.5:6379/0
     ports:
       - "9808:9808"
     depends_on:
@@ -63,7 +63,7 @@ services:
       - PROCESSED_VIDEOS_NAME=processed_videos
       - GCLOUD_PROJECT=ifpv-drone-racing-league-003
       - CS_BUCKET_NAME=ifpv-videos
-      - BROKER_URL=10.142.0.3
+      - BROKER_URL=10.142.0.5
     networks:
       network:
 
