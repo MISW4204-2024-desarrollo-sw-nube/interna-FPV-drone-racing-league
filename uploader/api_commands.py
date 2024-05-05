@@ -101,6 +101,7 @@ def upload_video():
         cloud_storage_bucket,
         proccessedVideosName,
         unproccessedVideosName,
+        user_id
     ]
 
     # Call celery
