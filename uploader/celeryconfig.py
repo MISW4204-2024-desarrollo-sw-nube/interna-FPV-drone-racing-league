@@ -1,3 +1,7 @@
+import os
+
+
 worker_send_task_events = True
 task_send_sent_event = True
-broker_url = 'redis://broker:6379/0'
+brokerURL = os.environ['BROKER_URL', 'broker']
+broker_url = 'redis://${brokerURL}:6379/0'
