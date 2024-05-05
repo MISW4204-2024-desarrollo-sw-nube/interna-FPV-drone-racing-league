@@ -79,6 +79,7 @@ def upload_video():
         bucket = storage_client.bucket(cloud_storage_bucket)
         blob = bucket.blob(destination_blob_name)
 
+        print(destination_blob_name, cloud_storage_bucket)
         blob.upload_from_file(file)
     except Exception:
         return jsonify(error="Error uploading video to Google Cloud Storage"), 500
