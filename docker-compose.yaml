@@ -15,7 +15,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=1234
       - POSTGRES_PORT=5432
-      - POSTGRES_HOST=34.138.120.2
+      - POSTGRES_HOST=10.84.64.3
       - JWT_SECRET_KEY=1234
       - ROOT=/shared
       - UNPROCCESSED_VIDEOS_NAME=unprocessed_videos
@@ -56,7 +56,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=1234
       - POSTGRES_PORT=5432
-      - POSTGRES_HOST=34.138.120.2
+      - POSTGRES_HOST=10.84.64.3
       - JWT_SECRET_KEY=1234
       - ROOT=/shared
       - UNPROCCESSED_VIDEOS_NAME=unprocessed_videos
@@ -74,14 +74,12 @@ services:
     command: python api_commands.py
     ports:
       - 80:5000
-    depends_on:
-      - database
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=1234
       - POSTGRES_PORT=5432
-      - POSTGRES_HOST=34.138.120.2
+      - POSTGRES_HOST=10.84.64.3
       - JWT_SECRET_KEY=1234
     networks:
       network:
