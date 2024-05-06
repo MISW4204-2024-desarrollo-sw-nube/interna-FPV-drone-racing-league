@@ -92,6 +92,7 @@ def upload_video():
         created_on=datetime.datetime.now(),
         owner_id=user_id,
     )
+    db.session.begin()
     db.session.add(video)
     db.session.commit()
 
