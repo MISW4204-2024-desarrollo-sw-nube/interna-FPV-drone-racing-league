@@ -186,7 +186,6 @@ def delete_video(id):
         blob = bucket.blob(video.uploaded_file_url)
         blob.delete()
         video.uploaded_file_url = None
-        db.session.close()
     except Exception:
         db.session.close()
         return jsonify(
@@ -197,7 +196,6 @@ def delete_video(id):
         blob = bucket.blob(video.processed_file_url)
         blob.delete()
         video.processed_file_url = None
-        db.session.close()
     except Exception:
         db.session.close()
         return jsonify(
