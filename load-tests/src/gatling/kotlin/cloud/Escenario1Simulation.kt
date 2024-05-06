@@ -32,6 +32,9 @@ class Escenario1Simulation : Simulation() {
 
   val videos = listOf("videos/small_20s.mp4")//iterateResources("videos")
 
+  val baseUrlAutenticador = Properties.propOrElse("BASE_URL") { "http://35.196.73.185" }
+  val baseUrlAPI = Properties.propOrElse("BASE_URL") { "http://34.49.154.207" }
+
   val feeder = listFeeder(videos.map {
     mapOf("video" to it)
   }).random()
@@ -51,7 +54,7 @@ class Escenario1Simulation : Simulation() {
 
   val getToken = exec(
     http("Create User")
-      .post("/api/users/signup")
+      .post("${baseUrlAutenticador}/api/users/signup")
       .body(
         StringBody(
           userString
@@ -60,7 +63,7 @@ class Escenario1Simulation : Simulation() {
         jsonPath("$..*").find().saveAs("body")
       ),
     http("Login User")
-      .post("/api/users/login")
+      .post("${baseUrlAutenticador}/api/users/login")
       .body(StringBody {
         val body = it.get<String>("body")?.replace("userpassword", "password")
         println(body)
@@ -79,7 +82,7 @@ class Escenario1Simulation : Simulation() {
 
   val process = exec (
     http("Process Video")
-      .post("/api/tasks")
+      .post("${baseUrlAPI}/api/tasks")
       .asMultipartForm()
       .bodyParts (
         RawFileBodyPart("file", videos.first())
@@ -95,11 +98,10 @@ class Escenario1Simulation : Simulation() {
       )
   )
 
-  val baseUrl = Properties.propOrElse("BASE_URL") { "https://35.196.85.247" }
 
 
   val httpProtocol =
-    http.baseUrl(baseUrl)
+    http
       .contentTypeHeader("application/json")
 
   val signupLogin = scenario("Token").exec(getToken)
@@ -109,7 +111,11 @@ class Escenario1Simulation : Simulation() {
     setUp(
       signupLogin.injectOpen(atOnceUsers(1)),
       processVideo.injectClosed(
-        rampConcurrentUsers(70).to(85).during(60)
+        incrementConcurrentUsers(5)
+          .times(10)
+          .eachLevelLasting(25)
+          .separatedByRampsLasting(2)
+          .startingFrom(75)
       )
     ).protocols(httpProtocol)
   }

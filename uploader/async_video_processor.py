@@ -100,14 +100,18 @@ def procesar_video(
         )
         db.session.commit()
         logger.info(f"Saved video in db: {processed_file_path} with id: {video_id}")
+        db.session.close()
     except Exception as e:
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.status: Status.incomplete, Video.processed_file_url: None}
         )
         db.session.commit()
+        db.session.close()
     try:
         # Remove files from local storage
         os.remove(unprocessed_file_path)
         os.remove(processed_file_path)
+        db.session.close()
     except Exception as e:
+        db.session.close()
         logger.error(f"Error removing files: {e}")

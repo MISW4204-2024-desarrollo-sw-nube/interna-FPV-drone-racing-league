@@ -81,6 +81,7 @@ def upload_video():
 
         blob.upload_from_file(file)
     except Exception:
+        db.session.close()
         return jsonify(error="Error uploading video to Google Cloud Storage"), 500
 
     video = Video(
@@ -106,6 +107,7 @@ def upload_video():
 
     # Call celery
     procesar_video.apply_async(args=args, queue="batch_videos")
+    db.session.close()
 
     return jsonify(id=video.id, message="File uploaded successfully")
 
@@ -124,6 +126,7 @@ def get_video(id):
         .filter(Video.id == id, Video.owner_id == user_id)
         .first()
     )
+    db.session.close()
     if video is None:
         return "", 404
     return video_schema.dump(video)
@@ -146,6 +149,7 @@ def get_video_list():
         .order_by(order_func(Video.id))
         .limit(max_value)
     )
+    db.session.close()
 
     return videos_schema.dump(videos.all())
 
@@ -177,7 +181,9 @@ def delete_video(id):
         blob = bucket.blob(video.uploaded_file_url)
         blob.delete()
         video.uploaded_file_url = None
+        db.session.close()
     except Exception:
+        db.session.close()
         return jsonify(
             error=f"Error deleting the uploaded video file with id:{id}"
         ), 500
@@ -186,7 +192,9 @@ def delete_video(id):
         blob = bucket.blob(video.processed_file_url)
         blob.delete()
         video.processed_file_url = None
+        db.session.close()
     except Exception:
+        db.session.close()
         return jsonify(
             error=f"Error deleting the processed video file with id:{id}"
         ), 500
@@ -196,8 +204,10 @@ def delete_video(id):
         video.updated_at = datetime.datetime.now()
         video.status = Status.deleted
         db.session.commit()
+        db.session.close()
         return "", 204
     except Exception:
+        db.session.close()
         return jsonify(error=f"Error deleting the video with id:{id}"), 500
 
 
