@@ -1,5 +1,6 @@
 import datetime
 import os
+import logging
 
 from base import (
     Status,
@@ -57,7 +58,7 @@ def upload_video():
     # Get the current date  and time as a string
 
     current_date = datetime.datetime.now().strftime("%Y-%m-%d")
-    current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
 
     # Create the current date folders
     current_unprocessed_folder = os.path.join(unprocessed_folder, current_date)
@@ -82,8 +83,9 @@ def upload_video():
         blob = bucket.blob(destination_blob_name)
 
         blob.upload_from_file(file)
-    except Exception:
+    except Exception as error :
         db.session.close()
+        app.logger.error('Error uploading video to Google Cloud Storage', exc_info=True)
         return jsonify(error="Error uploading video to Google Cloud Storage"), 500
 
     video = Video(
