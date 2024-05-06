@@ -24,7 +24,9 @@ def procesar_video(*args):
 
 
 def find_user_account_by_id(user_id):
-    return Usuario.query.filter(Usuario.id == user_id).first()
+    user = Usuario.query.filter(Usuario.id == user_id).first()
+    db.session.close()
+    return user
 
 
 def is_userid_invalid(user_id):
