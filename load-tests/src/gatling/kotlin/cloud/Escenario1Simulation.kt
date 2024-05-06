@@ -91,12 +91,16 @@ class Escenario1Simulation : Simulation() {
         "Bearer $token"
       }
       .check(
-        status().shouldBe(200),
         jsonPath("$.message")
           .find().shouldBe("File uploaded successfully"),
+        status().shouldBe(200),
         bodyString().saveAs("BODY")
       )
-  )
+  ).exec { session ->
+      val response = session.get<String>("BODY")
+      println("Response body: \n$response")
+      session
+  }
 
 
 
@@ -111,11 +115,8 @@ class Escenario1Simulation : Simulation() {
     setUp(
       signupLogin.injectOpen(atOnceUsers(1)),
       processVideo.injectClosed(
-        incrementConcurrentUsers(5)
-          .times(10)
-          .eachLevelLasting(25)
-          .separatedByRampsLasting(2)
-          .startingFrom(75)
+        constantConcurrentUsers(0).during(10),
+        constantConcurrentUsers(200).during(120),
       )
     ).protocols(httpProtocol)
   }
