@@ -14,3 +14,4 @@ celery
 celery[redis]
 prometheus_flask_exporter
 google-cloud-storage
+google-cloud-pubsub

@@ -1,6 +1,5 @@
 import datetime
 import os
-import logging
 
 from base import (
     Status,
@@ -17,6 +16,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from google.cloud import storage
 from sqlalchemy import asc, desc
 from werkzeug.utils import secure_filename
+from google.cloud import pubsub_v1
 
 
 @celery_app.task(name="procesar_video")
@@ -98,7 +98,19 @@ def upload_video():
     db.session.add(video)
     db.session.commit()
 
-    args = [
+    # args = [
+    #    filename_with_timestamp,
+    #    current_unprocessed_folder,
+    #    current_processed_folder,
+    #    logo_file,
+    #    video.id,
+    #    cloud_storage_bucket,
+    #    proccessedVideosName,
+    #    unproccessedVideosName,
+    #    user_id
+    #]
+
+    args_data = {
         filename_with_timestamp,
         current_unprocessed_folder,
         current_processed_folder,
@@ -108,10 +120,20 @@ def upload_video():
         proccessedVideosName,
         unproccessedVideosName,
         user_id
-    ]
+     }
+
+    #Publish message to a topic
+    publisher = pubsub_v1.PublisherClient()
+    # The `topic_path` method creates a fully qualified identifier
+    # in the form `projects/{project_id}/topics/{topic_id}`
+    topic_path = publisher.topic_path("ifpv-drone-racing-league-003", "ifpv-videos-topic")
+
+    future = publisher.publish(topic_path, args_data)
+    print(future.result())
+    print(f"Published messages to {topic_path}.")
 
     # Call celery
-    procesar_video.apply_async(args=args, queue="batch_videos")
+    # procesar_video.apply_async(args=args, queue="batch_videos")
     db.session.close()
 
     return jsonify(id=video.id, message="File uploaded successfully")
