@@ -1,7 +1,7 @@
 import datetime
 import os
-import logging
-
+import io
+import json
 from base import (
     Status,
     Usuario,
@@ -18,11 +18,61 @@ from google.cloud import storage
 from sqlalchemy import asc, desc
 from werkzeug.utils import secure_filename
 
+from google.cloud import pubsub_v1
+from google.api_core.exceptions import NotFound, GoogleAPICallError, Forbidden
+from avro.io import BinaryEncoder, DatumWriter
+from google.cloud.pubsub import PublisherClient
+from google.pubsub_v1.types import Encoding
+import avro
+
+project_id = os.environ['GCLOUD_PROJECT']
+topic_id = os.environ['TOPIC_ID']
+schema_file = os.environ['TOPIC_SCHEMA_PATH']
+
+# TODO: TO BE DELETE IF IT WORKS IN PRODUCTION
+## os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./application_default_credentials.json"
+
+def publicar_video_topico(args):
+    #Publish message to a topic
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(project_id, topic_id)
+    publisher_client = PublisherClient()
+
+    # Prepare to write Avro records to the binary output stream.
+    avro_schema = avro.schema.parse(open(schema_file, "rb").read())
+    writer = DatumWriter(avro_schema)
+    bout = io.BytesIO()
+
+    try:
+        # Get the topic encoding type.
+        topic = publisher_client.get_topic(request={"topic": topic_path})
+        encoding = topic.schema_settings.encoding
+
+        # Encode the data according to the message serialization type.
+        if encoding == Encoding.BINARY:
+            encoder = BinaryEncoder(bout)
+            writer.write(args, encoder)
+            data = bout.getvalue()
+        elif encoding == Encoding.JSON:
+            data_str = json.dumps(args)
+            data = data_str.encode("utf-8")
+        else:
+            exit(0)
+
+        future = publisher_client.publish(topic_path, data)
+        app.logger.error(f"Published message with ID: {future.result()}", exc_info=True)
+
+    except NotFound:
+        app.logger.error(f"{topic_id} not found.")
+    except GoogleAPICallError as apiCallError:
+        app.logger.error(f"An error has occured. Google API Call Error: " + str(apiCallError))
+    except Forbidden as forbiddenError:
+        app.logger.error(f"Operation is not allowed: " + str(forbiddenError))
+
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
     pass
-
 
 def find_user_account_by_id(user_id):
     user = Usuario.query.filter(Usuario.id == user_id).first()
@@ -83,7 +133,7 @@ def upload_video():
         blob = bucket.blob(destination_blob_name)
 
         blob.upload_from_file(file)
-    except Exception as error :
+    except Exception:
         db.session.close()
         app.logger.error('Error uploading video to Google Cloud Storage', exc_info=True)
         return jsonify(error="Error uploading video to Google Cloud Storage"), 500
@@ -98,20 +148,38 @@ def upload_video():
     db.session.add(video)
     db.session.commit()
 
-    args = [
-        filename_with_timestamp,
-        current_unprocessed_folder,
-        current_processed_folder,
-        logo_file,
-        video.id,
-        cloud_storage_bucket,
-        proccessedVideosName,
-        unproccessedVideosName,
-        user_id
-    ]
+    # TODO: TO BE DELETE WHEN PUB/SUB IS DONE
+    # args = [
+    #    filename_with_timestamp,
+    #    current_unprocessed_folder,
+    #    current_processed_folder,
+    #    logo_file,
+    #    video.id,
+    #    cloud_storage_bucket,
+    #    proccessedVideosName,
+    #    unproccessedVideosName,
+    #    user_id
+    #]
 
+    args_data = {
+        "filename_with_timestamp": filename_with_timestamp,
+        "current_unprocessed_folder": current_unprocessed_folder,
+        "current_processed_folder": current_processed_folder,
+        "logo_file": logo_file if logo_file is not None else "" ,
+        "video_id": str(video.id),
+        "cloud_storage_bucket": cloud_storage_bucket,
+        "proccessedVideosName": proccessedVideosName,
+        "unproccessedVideosName": unproccessedVideosName,
+        "user_id": str(user_id)
+    }
+
+    #Enviamos datos de video a topico.
+    publicar_video_topico(args_data)
+
+    # TODO: TO BE DELETE WHEN PUB/SUB IS DONE
     # Call celery
-    procesar_video.apply_async(args=args, queue="batch_videos")
+    # procesar_video.apply_async(args=args, queue="batch_videos")
+
     db.session.close()
 
     return jsonify(id=video.id, message="File uploaded successfully")
