@@ -19,8 +19,7 @@ from sqlalchemy import asc, desc
 from werkzeug.utils import secure_filename
 
 from google.cloud import pubsub_v1
-from google.pubsub_v1.types import Encoding
-from google.api_core.exceptions import NotFound
+from google.api_core.exceptions import NotFound, GoogleAPICallError, Forbidden
 from avro.io import BinaryEncoder, DatumWriter
 from google.cloud.pubsub import PublisherClient
 from google.pubsub_v1.types import Encoding
@@ -61,10 +60,15 @@ def publicar_video_topico(args):
             exit(0)
 
         future = publisher_client.publish(topic_path, data)
-        print(f"Published message ID: {future.result()}")
+        app.logger.error(f"Published message with ID: {future.result()}", exc_info=True)
 
     except NotFound:
-        print(f"{topic_id} not found.")
+        app.logger.error(f"{topic_id} not found.")
+    except GoogleAPICallError as apiCallError:
+        app.logger.error(f"An error has occured. Google API Call Error: " + str(apiCallError))
+    except Forbidden as forbiddenError:
+        app.logger.error(f"Operation is not allowed: " + str(forbiddenError))
+
 
 @celery_app.task(name="procesar_video")
 def procesar_video(*args):
@@ -129,7 +133,7 @@ def upload_video():
         blob = bucket.blob(destination_blob_name)
 
         blob.upload_from_file(file)
-    except Exception as error :
+    except Exception:
         db.session.close()
         app.logger.error('Error uploading video to Google Cloud Storage', exc_info=True)
         return jsonify(error="Error uploading video to Google Cloud Storage"), 500
