@@ -101,7 +101,7 @@ def procesar_video(
         db.session.commit()
         logger.info(f"Saved video in db: {processed_file_path} with id: {video_id}")
         db.session.close()
-    except Exception as e:
+    except Exception:
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.status: Status.incomplete, Video.processed_file_url: None}
         )
