@@ -31,7 +31,7 @@ topic_id = os.environ['TOPIC_ID']
 schema_file = os.environ['TOPIC_SCHEMA_PATH']
 
 # TODO: TO BE DELETE IF IT WORKS IN PRODUCTION
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./application_default_credentials.json"
+## os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./application_default_credentials.json"
 
 def publicar_video_topico(args):
     #Publish message to a topic
