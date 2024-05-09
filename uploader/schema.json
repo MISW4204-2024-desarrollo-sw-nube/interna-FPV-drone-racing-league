@@ -1,0 +1,42 @@
+{
+  "type": "record",
+  "name": "Avro",
+  "fields": [
+    {
+      "name": "filename_with_timestamp",
+      "type": "string"
+    },
+    {
+      "name": "current_unprocessed_folder",
+      "type": "string"
+    },
+    {
+      "name": "current_processed_folder",
+      "type": "string"
+    },
+    {
+      "name": "logo_file",
+      "type": "string"
+    },
+    {
+      "name": "video_id",
+      "type": "string"
+    },
+    {
+      "name": "cloud_storage_bucket",
+      "type": "string"
+    },
+    {
+      "name": "proccessedVideosName",
+      "type": "string"
+    },
+    {
+      "name": "unproccessedVideosName",
+      "type": "string"
+    },
+    {
+      "name": "user_id",
+      "type": "string"
+    }
+  ]
+}
