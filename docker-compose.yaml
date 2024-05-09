@@ -64,6 +64,8 @@ services:
       - GCLOUD_PROJECT=ifpv-drone-racing-league-003
       - CS_BUCKET_NAME=ifpv-videos
       - BROKER_URL=10.142.0.5
+      - TOPIC_ID=ifpv-videos-topic
+      - TOPIC_SCHEMA_PATH=./schema.json
     networks:
       network:
 
