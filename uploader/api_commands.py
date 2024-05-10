@@ -65,9 +65,9 @@ def publicar_video_topico(args):
     except NotFound:
         app.logger.error(f"{topic_id} not found.")
     except GoogleAPICallError as apiCallError:
-        app.logger.error(f"An error has occured. Google API Call Error: " + str(apiCallError))
+        app.logger.error("An error has occured. Google API Call Error: " + str(apiCallError))
     except Forbidden as forbiddenError:
-        app.logger.error(f"Operation is not allowed: " + str(forbiddenError))
+        app.logger.error("Operation is not allowed: " + str(forbiddenError))
 
 
 @celery_app.task(name="procesar_video")
