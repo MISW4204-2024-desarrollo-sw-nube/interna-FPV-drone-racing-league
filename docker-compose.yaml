@@ -33,7 +33,7 @@ services:
     working_dir: /backend/
     command: python subscriber_video_processor.py
     ports:
-      - 443:5000
+      - 80:5000
     volumes:
       - ./video-processor:/mnt/
       - ./shared:/shared/
@@ -45,7 +45,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=1234
       - POSTGRES_PORT=5432
-      - POSTGRES_HOST=database
+      - POSTGRES_HOST=10.84.64.3
       - ROOT=/shared
       - GCLOUD_PROJECT=ifpv-drone-racing-league-003
 
