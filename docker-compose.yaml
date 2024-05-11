@@ -33,7 +33,7 @@ services:
     working_dir: /backend/
     command: python subscriber_video_processor.py
     ports:
-      - 6001:5000
+      - 443:5000
     volumes:
       - ./video-processor:/mnt/
       - ./shared:/shared/
