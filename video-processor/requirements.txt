@@ -13,3 +13,4 @@ flask-jwt-extended
 prometheus_flask_exporter
 google-cloud
 google-cloud-storage
+pyopenssl
