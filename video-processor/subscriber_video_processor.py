@@ -2,6 +2,8 @@ import base64
 import datetime
 import json
 import os
+import time
+
 
 from base import Status, Video, app, db
 from flask import request
@@ -52,6 +54,8 @@ def procesar_video(
     unproccessedVideosName,
     user_id,
 ):
+
+    start_time = time.time()
     unprocessed_file_path = os.path.join(
         current_unprocessed_folder, unprocessed_file_name
     )
@@ -126,6 +130,9 @@ def procesar_video(
         db.session.commit()
         app.logger.info(f"Saved video in db: {processed_file_path} with id: {video_id}")
         db.session.close()
+        end_time = time.time()
+        processing_time = end_time - start_time
+        app.logger.info(f"Tiempo de procesamiento: {processing_time} segundos")
     except Exception as ex:
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.status: Status.incomplete, Video.processed_file_url: None}
