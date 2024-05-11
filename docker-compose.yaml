@@ -1,48 +1,5 @@
 version: "3.2"
 services:
-  celery:
-    build:
-      context: ./
-      dockerfile: ./batch/Dockerfile
-    volumes:
-      - ./shared:/shared/
-    depends_on:
-      - broker
-    networks:
-      network:
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=1234
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=10.84.64.3
-      - JWT_SECRET_KEY=1234
-      - ROOT=/shared
-      - UNPROCCESSED_VIDEOS_NAME=unprocessed_videos
-      - PROCESSED_VIDEOS_NAME=processed_videos
-      - GCLOUD_PROJECT=ifpv-drone-racing-league-003
-      - CS_BUCKET_NAME=ifpv-videos
-
-  celery-exporter:
-    image: danihodovic/celery-exporter
-    environment:
-      CE_BROKER_URL: redis://10.142.0.5:6379/0
-    ports:
-      - "9808:9808"
-    depends_on:
-      - celery
-      - broker
-    networks:
-      network:
-
-
-  broker:
-    image: redis:latest
-    ports:
-      - 6379:6379
-    networks:
-      network:
-
 
   uploader:
     build: ./uploader
@@ -71,6 +28,26 @@ services:
     networks:
       network:
 
+  video-processor:
+    build: ./video-processor
+    working_dir: /backend/
+    command: python subscriber_video_processor.py
+    ports:
+      - 80:5000
+    volumes:
+      - ./video-processor:/mnt/
+      - ./shared:/shared/
+    networks:
+      network:
+    environment:
+      - PUBSUB_VERIFICATION_TOKEN=1234
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=database
+      - ROOT=/shared
+      - GCLOUD_PROJECT=ifpv-drone-racing-league-003
 
   authentication:
     build: ./authentication
@@ -90,7 +67,6 @@ services:
     networks:
       network:
 
-
   database:
     image: postgres
     restart: always
@@ -107,7 +83,6 @@ services:
     networks:
       network:
 
-
   nginx:
     image: nginx:latest
     ports:
@@ -122,7 +97,6 @@ services:
     networks:
       network:
 
-
   prometheus:
     image: prom/prometheus:v2.21.0
     ports:
@@ -133,7 +107,6 @@ services:
     command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus.yml
     networks:
       network:
-
 
   grafana:
     image: grafana/grafana:10.4.1
@@ -146,10 +119,8 @@ services:
     networks:
       network:
 
-
 networks:
   network:
-
 
 volumes:
   prometheus-data:

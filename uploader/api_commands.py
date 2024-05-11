@@ -1,7 +1,10 @@
 import datetime
-import os
 import io
 import json
+import os
+
+import avro
+from avro.io import BinaryEncoder, DatumWriter
 from base import (
     Status,
     Usuario,
@@ -14,16 +17,12 @@ from base import (
 )
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from google.cloud import storage
-from sqlalchemy import asc, desc
-from werkzeug.utils import secure_filename
-
-from google.cloud import pubsub_v1
-from google.api_core.exceptions import NotFound, GoogleAPICallError, Forbidden
-from avro.io import BinaryEncoder, DatumWriter
+from google.api_core.exceptions import Forbidden, GoogleAPICallError, NotFound
+from google.cloud import pubsub_v1, storage
 from google.cloud.pubsub import PublisherClient
 from google.pubsub_v1.types import Encoding
-import avro
+from sqlalchemy import asc, desc
+from werkzeug.utils import secure_filename
 
 project_id = os.environ['GCLOUD_PROJECT']
 topic_id = os.environ['TOPIC_ID']
