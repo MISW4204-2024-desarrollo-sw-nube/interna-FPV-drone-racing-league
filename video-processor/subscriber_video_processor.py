@@ -1,13 +1,12 @@
 import base64
 import datetime
-import os
 import json
+import os
+
+from base import Status, Video, app, db
 from flask import request
-from flask_jwt_extended import get_jwt_identity, jwt_required
-from base import (app, db, Status, Video)
 from google.cloud import storage
 from moviepy.editor import ImageClip, VideoFileClip, concatenate_videoclips
-import json
 
 # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./application_default_credentials.json"
 
@@ -154,7 +153,7 @@ def upload_video():
     payload = base64.b64decode(envelope['message']['data'])
     data = json.loads(str(payload, 'utf-8'))
 
-    validation = are_valid_parameters(data);
+    validation = are_valid_parameters(data)
 
     if validation is not None:
         return validation

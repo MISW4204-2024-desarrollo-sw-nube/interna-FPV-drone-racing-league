@@ -2,17 +2,16 @@
 import datetime
 import enum
 import os
-# import celeryconfig
 
+# import celeryconfig
 # from celery import Celery
 from flask import Flask
 from flask_marshmallow import Marshmallow
-from marshmallow_enum import EnumField
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import TIMESTAMP, Enum
-from flask_jwt_extended import JWTManager
+from marshmallow_enum import EnumField
 from prometheus_flask_exporter import PrometheusMetrics
+from sqlalchemy import TIMESTAMP, Enum
 
 database = os.environ['POSTGRES_DB']
 user = os.environ['POSTGRES_USER']
