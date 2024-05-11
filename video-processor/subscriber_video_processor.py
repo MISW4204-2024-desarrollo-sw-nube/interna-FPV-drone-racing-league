@@ -8,8 +8,6 @@ from flask import request
 from google.cloud import storage
 from moviepy.editor import ImageClip, VideoFileClip, concatenate_videoclips
 
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./application_default_credentials.json"
-
 secretKey = os.environ['PUBSUB_VERIFICATION_TOKEN']
 
 def are_valid_parameters(args):
@@ -133,7 +131,6 @@ def procesar_video(
             {Video.status: Status.incomplete, Video.processed_file_url: None}
         )
         db.session.commit()
-        db.session.close()
         app.logger.error(f"{ex}")
     try:
         # Remove files from local storage
