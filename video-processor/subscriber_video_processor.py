@@ -132,7 +132,7 @@ def procesar_video(
         db.session.close()
         end_time = time.time()
         processing_time = end_time - start_time
-        app.logger.info(f"Tiempo de procesamiento: {processing_time} segundos")
+        print(f"Tiempo de procesamiento: {processing_time} segundos")
     except Exception as ex:
         db.session.query(Video).filter(Video.id == video_id).update(
             {Video.status: Status.incomplete, Video.processed_file_url: None}
