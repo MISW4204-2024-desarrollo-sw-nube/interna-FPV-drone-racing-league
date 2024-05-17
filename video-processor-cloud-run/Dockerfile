@@ -31,3 +31,5 @@ ADD * /backend/
 
 # Expose port 5000 in the Docker image
 EXPOSE 8080
+
+CMD ["python", "./subscriber_video_processor.py"]
