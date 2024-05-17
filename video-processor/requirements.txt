@@ -2,7 +2,6 @@ flask
 werkzeug
 moviepy
 Flask-RESTful
-Pillow==9.5.0
 flask-marshmallow
 Flask-SQLAlchemy
 SQLAlchemy
