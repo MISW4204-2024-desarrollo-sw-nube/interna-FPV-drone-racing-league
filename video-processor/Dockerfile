@@ -26,7 +26,7 @@ RUN pip install -r requirements.txt
 ADD * /backend/
 
 # Expose port 5000 in the Docker image
-EXPOSE 5000
+EXPOSE 443
 
 
 CMD ["python", "./subscriber_video_processor.py"]
