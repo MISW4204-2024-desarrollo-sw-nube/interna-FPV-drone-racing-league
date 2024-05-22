@@ -2,17 +2,15 @@
 import datetime
 import enum
 import os
-import celeryconfig
 
-from celery import Celery
 from flask import Flask
+from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
-from marshmallow_enum import EnumField
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import TIMESTAMP, Enum
-from flask_jwt_extended import JWTManager
+from marshmallow_enum import EnumField
 from prometheus_flask_exporter import PrometheusMetrics
+from sqlalchemy import TIMESTAMP, Enum
 
 database = os.environ['POSTGRES_DB']
 user = os.environ['POSTGRES_USER']
@@ -55,11 +53,6 @@ ma = Marshmallow(app)
 api = Api(app)
 metrics = PrometheusMetrics(app)
 jwt = JWTManager(app)
-
-celery_app = Celery(
-    "async_video_processor",
-)
-celery_app.config_from_object(celeryconfig)
 
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)

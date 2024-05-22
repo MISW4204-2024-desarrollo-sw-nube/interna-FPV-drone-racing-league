@@ -10,7 +10,6 @@ from base import (
     Usuario,
     Video,
     app,
-    celery_app,
     db,
     video_schema,
     videos_schema,
@@ -68,10 +67,6 @@ def publicar_video_topico(args):
     except Forbidden as forbiddenError:
         app.logger.error("Operation is not allowed: " + str(forbiddenError))
 
-
-@celery_app.task(name="procesar_video")
-def procesar_video(*args):
-    pass
 
 def find_user_account_by_id(user_id):
     user = Usuario.query.filter(Usuario.id == user_id).first()
@@ -174,10 +169,6 @@ def upload_video():
 
     #Enviamos datos de video a topico.
     publicar_video_topico(args_data)
-
-    # TODO: TO BE DELETE WHEN PUB/SUB IS DONE
-    # Call celery
-    # procesar_video.apply_async(args=args, queue="batch_videos")
 
     db.session.close()
 
@@ -282,4 +273,4 @@ def delete_video(id):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0", port=8080)
