@@ -21,8 +21,9 @@ secretKey = os.environ['JWT_SECRET_KEY']
 root = os.environ['ROOT']
 unproccessedVideosName = os.environ['UNPROCCESSED_VIDEOS_NAME']
 proccessedVideosName = os.environ['PROCESSED_VIDEOS_NAME']
+gcloudDatabaseConnectionName = os.environ['GCLOUD_DATABASE_CONNECTION_NAME']
 
-database_url = f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'
+database_url = f'postgresql+psycopg2://{user}:{password}@/{database}?host=/cloudsql/{gcloudDatabaseConnectionName}'
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url

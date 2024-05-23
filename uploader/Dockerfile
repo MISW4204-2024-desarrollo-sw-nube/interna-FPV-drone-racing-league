@@ -35,6 +35,7 @@ ENV GCLOUD_PROJECT=ifpv-drone-racing-league-003
 ENV CS_BUCKET_NAME=ifpv-videos
 ENV TOPIC_ID=ifpv-videos-topic
 ENV TOPIC_SCHEMA_PATH=./schema.json
+ENV GCLOUD_DATABASE_CONNECTION_NAME=ifpv-drone-racing-league-003:us-east1:postgres
 
 # Run the application.
 CMD ["python", "api_commands.py"]
