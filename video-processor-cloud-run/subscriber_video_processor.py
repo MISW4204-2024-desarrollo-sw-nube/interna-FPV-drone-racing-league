@@ -14,6 +14,15 @@ secretKey = os.environ['PUBSUB_VERIFICATION_TOKEN']
 appPort = int(os.environ['APP_PORT']) if os.environ['APP_PORT'] is not None else 8080
 resourcesBucketName = os.environ['RESOURCES_BUCKET_NAME']
 
+def list_files(startpath):
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(startpath, '').count(os.sep)
+        indent = ' ' * 4 * level
+        app.logger.error('{}{}/'.format(indent, os.path.basename(root)) + "(TEST PURPOSE - NO REAL ERROR)")
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            app.logger.error('{}{}'.format(subindent, f) + "(TEST PURPOSE - NO REAL ERROR)")
+
 def are_valid_parameters(args):
     if args is None:
          return 'Invalid parameters. Please provide valid arguments.', 400
@@ -158,6 +167,9 @@ def upload_video():
     envelope = json.loads(request.data.decode('utf-8'))
     payload = base64.b64decode(envelope['message']['data'])
     data = json.loads(str(payload, 'utf-8'))
+
+    # print all directoris and its subdirectories
+    list_files("/backend")
 
     validation = are_valid_parameters(data)
 
