@@ -29,6 +29,8 @@ RUN pip install -r requirements.txt
 # Add all files from the local system to the '/backend' directory in the Docker image
 ADD * /backend/
 
+VOLUME ../shared:/shared/
+
 # Expose port 5000 in the Docker image
 EXPOSE 8080
 
