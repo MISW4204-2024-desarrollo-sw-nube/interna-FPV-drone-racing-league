@@ -10,7 +10,6 @@ from base import (
     Usuario,
     Video,
     app,
-    celery_app,
     db,
     video_schema,
     videos_schema,
@@ -24,15 +23,16 @@ from google.pubsub_v1.types import Encoding
 from sqlalchemy import asc, desc
 from werkzeug.utils import secure_filename
 
-project_id = os.environ['GCLOUD_PROJECT']
-topic_id = os.environ['TOPIC_ID']
-schema_file = os.environ['TOPIC_SCHEMA_PATH']
+project_id = os.environ["GCLOUD_PROJECT"]
+topic_id = os.environ["TOPIC_ID"]
+schema_file = os.environ["TOPIC_SCHEMA_PATH"]
 
 # TODO: TO BE DELETE IF IT WORKS IN PRODUCTION
 ## os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./application_default_credentials.json"
 
+
 def publicar_video_topico(args):
-    #Publish message to a topic
+    # Publish message to a topic
     publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path(project_id, topic_id)
     publisher_client = PublisherClient()
@@ -69,10 +69,6 @@ def publicar_video_topico(args):
         app.logger.error("Operation is not allowed: " + str(forbiddenError))
 
 
-@celery_app.task(name="procesar_video")
-def procesar_video(*args):
-    pass
-
 def find_user_account_by_id(user_id):
     user = Usuario.query.filter(Usuario.id == user_id).first()
     db.session.close()
@@ -94,8 +90,8 @@ def upload_video():
     if is_userid_invalid(user_id):
         return is_userid_invalid(user_id)
 
-    unprocessed_folder = app.config["UNPROCESSED_FOLDER"]
-    processed_folder = app.config["PROCESSED_FOLDER"]
+    unproccessedVideosName = os.environ['UNPROCCESSED_VIDEOS_NAME']
+    proccessedVideosName = os.environ['PROCESSED_VIDEOS_NAME']
     logo_file = app.config["LOGO_FILE"]
     cloud_storage_bucket = app.config["CS_BUCKET_NAME"]
     unproccessedVideosName = os.environ["UNPROCCESSED_VIDEOS_NAME"]
@@ -106,12 +102,7 @@ def upload_video():
     file = request.files["file"]
     # Get the current date  and time as a string
 
-    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
     current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
-
-    # Create the current date folders
-    current_unprocessed_folder = os.path.join(unprocessed_folder, current_date)
-    current_processed_folder = os.path.join(processed_folder, current_date)
 
     filename = secure_filename(file.filename) if file.filename else None
     if not filename:
@@ -134,7 +125,6 @@ def upload_video():
         blob.upload_from_file(file)
     except Exception:
         db.session.close()
-        app.logger.error('Error uploading video to Google Cloud Storage', exc_info=True)
         return jsonify(error="Error uploading video to Google Cloud Storage"), 500
 
     video = Video(
@@ -147,37 +137,20 @@ def upload_video():
     db.session.add(video)
     db.session.commit()
 
-    # TODO: TO BE DELETE WHEN PUB/SUB IS DONE
-    # args = [
-    #    filename_with_timestamp,
-    #    current_unprocessed_folder,
-    #    current_processed_folder,
-    #    logo_file,
-    #    video.id,
-    #    cloud_storage_bucket,
-    #    proccessedVideosName,
-    #    unproccessedVideosName,
-    #    user_id
-    #]
-
     args_data = {
         "filename_with_timestamp": filename_with_timestamp,
-        "current_unprocessed_folder": current_unprocessed_folder,
-        "current_processed_folder": current_processed_folder,
-        "logo_file": logo_file if logo_file is not None else "" ,
+        "current_unprocessed_folder": unproccessedVideosName,
+        "current_processed_folder": proccessedVideosName,
+        "logo_file": logo_file if logo_file is not None else "",
         "video_id": str(video.id),
         "cloud_storage_bucket": cloud_storage_bucket,
         "proccessedVideosName": proccessedVideosName,
         "unproccessedVideosName": unproccessedVideosName,
-        "user_id": str(user_id)
+        "user_id": str(user_id),
     }
 
-    #Enviamos datos de video a topico.
+    # Enviamos datos de video a topico.
     publicar_video_topico(args_data)
-
-    # TODO: TO BE DELETE WHEN PUB/SUB IS DONE
-    # Call celery
-    # procesar_video.apply_async(args=args, queue="batch_videos")
 
     db.session.close()
 
@@ -282,4 +255,4 @@ def delete_video(id):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0", port=8080)

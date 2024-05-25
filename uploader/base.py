@@ -2,17 +2,15 @@
 import datetime
 import enum
 import os
-import celeryconfig
 
-from celery import Celery
 from flask import Flask
+from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
-from marshmallow_enum import EnumField
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import TIMESTAMP, Enum
-from flask_jwt_extended import JWTManager
+from marshmallow_enum import EnumField
 from prometheus_flask_exporter import PrometheusMetrics
+from sqlalchemy import TIMESTAMP, Enum
 
 database = os.environ['POSTGRES_DB']
 user = os.environ['POSTGRES_USER']
@@ -23,8 +21,9 @@ secretKey = os.environ['JWT_SECRET_KEY']
 root = os.environ['ROOT']
 unproccessedVideosName = os.environ['UNPROCCESSED_VIDEOS_NAME']
 proccessedVideosName = os.environ['PROCESSED_VIDEOS_NAME']
+gcloudDatabaseConnectionName = os.environ['GCLOUD_DATABASE_CONNECTION_NAME']
 
-database_url = f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'
+database_url = f'postgresql+psycopg2://{user}:{password}@/{database}?host=/cloudsql/{gcloudDatabaseConnectionName}'
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
@@ -33,14 +32,6 @@ app.config["JWT_SECRET_KEY"] = secretKey
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 app.config["ROOT"] = root
 app.config["CS_BUCKET_NAME"] = os.environ['CS_BUCKET_NAME']
-app.config["UNPROCESSED_FOLDER"] = os.path.join(
-    app.config["ROOT"],
-    unproccessedVideosName
-)
-app.config["PROCESSED_FOLDER"] = os.path.join(
-    app.config["ROOT"],
-    proccessedVideosName
-)
 app.config["RESOURCES_FOLDER"] = os.path.join(app.config["ROOT"], 'res')
 app.config["LOGO_FILE"] = os.path.join(
     app.config["RESOURCES_FOLDER"],
@@ -55,11 +46,6 @@ ma = Marshmallow(app)
 api = Api(app)
 metrics = PrometheusMetrics(app)
 jwt = JWTManager(app)
-
-celery_app = Celery(
-    "async_video_processor",
-)
-celery_app.config_from_object(celeryconfig)
 
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
