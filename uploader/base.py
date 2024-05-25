@@ -32,14 +32,6 @@ app.config["JWT_SECRET_KEY"] = secretKey
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 app.config["ROOT"] = root
 app.config["CS_BUCKET_NAME"] = os.environ['CS_BUCKET_NAME']
-app.config["UNPROCESSED_FOLDER"] = os.path.join(
-    app.config["ROOT"],
-    unproccessedVideosName
-)
-app.config["PROCESSED_FOLDER"] = os.path.join(
-    app.config["ROOT"],
-    proccessedVideosName
-)
 app.config["RESOURCES_FOLDER"] = os.path.join(app.config["ROOT"], 'res')
 app.config["LOGO_FILE"] = os.path.join(
     app.config["RESOURCES_FOLDER"],
